@@ -1,6 +1,10 @@
 name: Win32 Last Chaos experimental build
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/win32-experimental.yml'
 
 jobs:
   build:
