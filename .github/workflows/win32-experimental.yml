@@ -54,12 +54,17 @@ jobs:
           if (-not (Test-Path $def)) { throw 'Missing d3d8.def' }
           $out = Join-Path $env:RUNNER_TEMP 'd3d8-msvc'
           New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $safeInc = Join-Path $out 'include'
+          New-Item -ItemType Directory -Force -Path $safeInc | Out-Null
+          foreach ($header in @('d3d8.h', 'd3d8types.h', 'd3d8caps.h')) {
+            Copy-Item (Join-Path $inc $header) (Join-Path $safeInc $header) -Force
+          }
           $lib = Get-ChildItem -Path (Join-Path '${{ steps.vs.outputs.path }}' 'VC/Tools/MSVC') -Recurse -Filter lib.exe | Where-Object { $_.FullName.Contains('Hostx64') -and $_.FullName.Contains('x86') } | Select-Object -First 1
           if (-not $lib) { throw 'MSVC x86 lib.exe missing' }
           & $lib.FullName /nologo /MACHINE:X86 "/DEF:$def" "/OUT:$out/d3d8.lib"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Set-Content -Path (Join-Path $out 'compat.h') -Value @('#ifndef __MSABI_LONG','#define __MSABI_LONG(x) x','#endif')
-          "DX8_INCLUDE=$inc" >> $env:GITHUB_ENV
+          "DX8_INCLUDE=$safeInc" >> $env:GITHUB_ENV
           "DX8_LIB=$out" >> $env:GITHUB_ENV
       - name: Install Ecc parser prerequisites
         id: parser
