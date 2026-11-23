@@ -64,7 +64,6 @@ jobs:
           "DXSDK_DIR=$out" >> $env:GITHUB_ENV
       - name: Install Ecc parser prerequisites
         id: parser
-
         shell: pwsh
         run: |
           choco install winflexbison3 -y --no-progress
@@ -76,7 +75,6 @@ jobs:
           Add-Content $env:GITHUB_PATH $directory
       - name: Build Last Chaos Ecc tool
         id: ecc
-
         shell: pwsh
         run: |
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\\Current\\Bin\\MSBuild.exe"
@@ -86,7 +84,6 @@ jobs:
           (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
       - name: Install Boost thread for Win32
         id: boost
-
         shell: pwsh
         run: |
           $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
@@ -105,76 +102,6 @@ jobs:
       - name: Attempt Win32 compilation and save diagnostic log
         if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
-
-        shell: pwsh
-        run: |
-          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
-          & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
-          if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
-      - name: Publish compiler log and any generated binaries
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: win32-build-diagnostics
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            build-win32.log
-            ecc-win32.log
-            **/Engine.dll
-            **/Nksp.exe
- } | Select-Object -First 1
-          if (-not $lib) { throw 'MSVC Win32 lib.exe missing' }
-          & $lib.FullName /nologo /MACHINE:X86 "/DEF:$def" "/OUT:$out/d3d8.lib"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Set-Content (Join-Path $out 'compat.h') '#ifndef __MSABI_LONG' + "`n#define __MSABI_LONG(x) x`n#endif"
-          "CL=/I`"$inc`" /FI`"$out/compat.h`"" >> $env:GITHUB_ENV
-          "LINK=/LIBPATH:`"$out`"" >> $env:GITHUB_ENV
-          "DXSDK_DIR=$out" >> $env:GITHUB_ENV
-      - name: Install Ecc parser prerequisites
-        id: parser
-
-        shell: pwsh
-        run: |
-          choco install winflexbison3 -y --no-progress
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $directory = Join-Path $env:ChocolateyInstall "lib\\winflexbison3\\tools"
-          if (-not (Test-Path (Join-Path $directory "win_bison.exe"))) { throw "win_bison.exe was not found in $directory" }
-          Copy-Item (Join-Path $directory "win_bison.exe") (Join-Path $directory "bison.exe") -Force
-          Copy-Item (Join-Path $directory "win_flex.exe") (Join-Path $directory "flex.exe") -Force
-          Add-Content $env:GITHUB_PATH $directory
-      - name: Build Last Chaos Ecc tool
-        id: ecc
-
-        shell: pwsh
-        run: |
-          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\\Current\\Bin\\MSBuild.exe"
-          & $msbuild "Ecc\\Ecc_2010.vcxproj" /m:1 /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /v:minimal "/flp:logfile=ecc-win32.log;verbosity=diagnostic"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path "Ecc\\Release\\Ecc.exe")) { throw "Ecc.exe was not generated in Ecc/Release" }
-          (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
-      - name: Install Boost thread for Win32
-        id: boost
-
-        shell: pwsh
-        run: |
-          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
-          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
-          $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
-          if (-not (Test-Path $vcpkg)) { throw "vcpkg.exe not found at $vcpkg" }
-          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & $vcpkg integrate install
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\multi_index_container.hpp"))) { throw "Boost MultiIndex missing" }
-          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\format.hpp"))) { throw "Boost format header missing after installation" }
-          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\thread.hpp"))) {
-            throw "Boost thread header missing after installation"
-          }
-      - name: Attempt Win32 compilation and save diagnostic log
-        if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
-        id: compile
-
         shell: pwsh
         run: |
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
