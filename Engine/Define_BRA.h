@@ -1,16 +1,16 @@
 #define ADD_SUBJOB
-#define AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
-#define CHAR_EX_MAGE	//2013/01/08 jeil ex ¸ÞÀÌÁö
-#define CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
-//#define CHRISTMAS_LOGO	//	Å©¸®½º ¸¶½º ·Î±×ÀÎ ·Î°í º¯°æ
+#define AUTO_RESTART	// [2012/10/18 : Sora] ìž¬ì‹œìž‘ì‹œ ìžë™ ë¡œê·¸ì¸
+#define CHAR_EX_MAGE	//2013/01/08 jeil ex ë©”ì´ì§€
+#define CHAR_EX_ROGUE	// [2012/08/27 : Sora] EXë¡œê·¸ ì¶”ê°€
+//#define CHRISTMAS_LOGO	//	í¬ë¦¬ìŠ¤ ë§ˆìŠ¤ ë¡œê·¸ì¸ ë¡œê³  ë³€ê²½
 #define ENABLE_GUILD_STASH
 #define GM_INVISIBLE_MODE
 #define GUILD_MARK
-#define IMPROV1107_NOTICESYSTEM	// °øÁö °­È­ ½Ã½ºÅÛ [trylord 11/14/11]
+#define IMPROV1107_NOTICESYSTEM	// ê³µì§€ ê°•í™” ì‹œìŠ¤í…œ [trylord 11/14/11]
 #define LINE_CHANGE_BY_WORD
 #define MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
 #define NEW_CHAO_SYS
 #define NEW_WEAPONDROP
-#define NEW_WORLD_MAP	// [2012/10/11 : Sora] ¿ùµå¸Ê °³Æí
-#define UPDATE1107_GUILDSYSTEM	// ±æµå ½Ã½ºÅÛ °³Æí
-#define XTRAP_SECURE_CKBANG_2010_07_20	// XTrap º¸¾È ¼Ö·ç¼Ç Àû¿ë
+#define NEW_WORLD_MAP	// [2012/10/11 : Sora] ì›”ë“œë§µ ê°œíŽ¸
+#define UPDATE1107_GUILDSYSTEM	// ê¸¸ë“œ ì‹œìŠ¤í…œ ê°œíŽ¸
+//#define XTRAP_SECURE_CKBANG_2010_07_20	// XTrap ë³´ì•ˆ ì†”ë£¨ì…˜ ì ìš©
