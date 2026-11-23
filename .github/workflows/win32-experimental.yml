@@ -1,0 +1,56 @@
+name: Win32 Last Chaos experimental build
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: xtrap-free-win32
+      - name: Check X-Trap build defines
+        shell: pwsh
+        run: |
+          $regions = 'BRA','GAMIGO','RUS','USA'
+          foreach ($region in $regions) {
+            $path = "Engine/Define_$region.h"
+            if (Select-String -Path $path -Pattern '^\s*#define\s+XTRAP_SECURE_CKBANG_2010_07_20\b' -Quiet) {
+              throw "X-Trap still enabled in $path"
+            }
+            Write-Host "X-Trap disabled in $path"
+          }
+      - name: Locate Visual Studio build tools
+        id: vs
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          if (-not $vs) { throw "MSBuild not found" }
+          "path=$vs" >> $env:GITHUB_OUTPUT
+          Write-Host "VS: $vs"
+      - name: Attempt Win32 compilation and save diagnostic log
+        id: compile
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
+          & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
+          if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
+      - name: Publish compiler log and any generated binaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: win32-build-diagnostics
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            build-win32.log
+            **/Engine.dll
+            **/Nksp.exe
+      - name: Indicate unsuccessful compilation
+        if: steps.compile.outcome == 'failure'
+        shell: pwsh
+        run: |
+          throw "Experimental build failed. Review win32-build-diagnostics artifact; binaries are not validated."
