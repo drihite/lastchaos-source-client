@@ -166,10 +166,10 @@ del Parser.c /q</Command>
     </CustomBuild>
     <CustomBuild Include="Scanner.l">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">flex -oScanner.cpp  Scanner.l</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">flex --nounistd -oScanner.cpp Scanner.l</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating scanner source</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Scanner.cpp;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">flex -oScanner.cpp  Scanner.l</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">flex --nounistd -oScanner.cpp Scanner.l</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Scanner.cpp;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
