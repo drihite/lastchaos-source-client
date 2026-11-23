@@ -1,17 +1,17 @@
-#define ADD_SUBJOB	//	»óÀÎ Å¬·¡½º Ãß°¡
-#define AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
-#define CHAR_EX_MAGE	//2013/01/08 jeil ex ¸ŞÀÌÁö
-#define CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+#define ADD_SUBJOB	//	ìƒì¸ í´ë˜ìŠ¤ ì¶”ê°€
+#define AUTO_RESTART	// [2012/10/18 : Sora] ì¬ì‹œì‘ì‹œ ìë™ ë¡œê·¸ì¸
+#define CHAR_EX_MAGE	//2013/01/08 jeil ex ë©”ì´ì§€
+#define CHAR_EX_ROGUE	// [2012/08/27 : Sora] EXë¡œê·¸ ì¶”ê°€
 #define CHATTING_BAN
 #define ENABLE_GUILD_STASH	// new guild stash by rumist
 #define GUILD_MARK	// sora guild mark define 2011-07-14
-#define IMPROV1107_NOTICESYSTEM	// °øÁö °­È­ ½Ã½ºÅÛ [trylord 11/14/11]
+#define IMPROV1107_NOTICESYSTEM	// ê³µì§€ ê°•í™” ì‹œìŠ¤í…œ [trylord 11/14/11]
 #define LINE_CHANGE_BY_WORD
 #define NEW_CHAO_SYS
-#define NEW_WORLD_MAP	// [2012/10/11 : Sora] ¿ùµå¸Ê °³Æí
-#define SIGEWAR_ATTACKRULE	//20110519 ÀÌÈÄ Àû¿ë ¿¹Á¤
-#define UPDATE1107_GUILDSYSTEM	// ±æµå ½Ã½ºÅÛ °³Æí
-#define XTRAP_SECURE_CKBANG_2010_07_20	// XTrap º¸¾È ¼Ö·ç¼Ç Àû¿ë
+#define NEW_WORLD_MAP	// [2012/10/11 : Sora] ì›”ë“œë§µ ê°œí¸
+#define SIGEWAR_ATTACKRULE	//20110519 ì´í›„ ì ìš© ì˜ˆì •
+#define UPDATE1107_GUILDSYSTEM	// ê¸¸ë“œ ì‹œìŠ¤í…œ ê°œí¸
+//#define XTRAP_SECURE_CKBANG_2010_07_20	// XTrap ë³´ì•ˆ ì†”ë£¨ì…˜ ì ìš©
 
 #if defined VER_TEST
 #endif	// VER_TEST
