@@ -37,9 +37,8 @@ jobs:
         run: |
           choco install winflexbison3 -y --no-progress
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $tool = Get-Command win_bison.exe -ErrorAction SilentlyContinue
-          if (-not $tool) { throw "win_bison.exe was not found" }
-          $directory = Split-Path $tool.Source
+          $directory = Join-Path $env:ChocolateyInstall "lib\\winflexbison3\\tools"
+          if (-not (Test-Path (Join-Path $directory "win_bison.exe"))) { throw "win_bison.exe was not found in $directory" }
           Copy-Item (Join-Path $directory "win_bison.exe") (Join-Path $directory "bison.exe") -Force
           Copy-Item (Join-Path $directory "win_flex.exe") (Join-Path $directory "flex.exe") -Force
           Add-Content $env:GITHUB_PATH $directory
