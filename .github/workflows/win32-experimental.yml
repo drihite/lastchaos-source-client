@@ -65,10 +65,11 @@ jobs:
           if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
           $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
           if (-not (Test-Path $vcpkg)) { throw "vcpkg.exe not found at $vcpkg" }
-          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows
+          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $vcpkg integrate install
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\multi_index_container.hpp"))) { throw "Boost MultiIndex missing" }
           if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\format.hpp"))) { throw "Boost format header missing after installation" }
           if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\thread.hpp"))) {
             throw "Boost thread header missing after installation"
