@@ -3,6 +3,10 @@
 #include "Ecc/StdH.h"
 #include "Ecc/Main.h"
 #include "Ecc/Parser.h"
+#ifdef _WIN32
+#include <io.h>
+#define isatty _isatty
+#endif
 
 #define YY_NEVER_INTERACTIVE 1
 
