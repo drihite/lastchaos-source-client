@@ -1,6 +1,10 @@
 name: Win32 Last Chaos experimental build
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/win32-experimental.yml'
 
 jobs:
   build:
@@ -30,19 +34,95 @@ jobs:
           if (-not $vs) { throw "MSBuild not found" }
           "path=$vs" >> $env:GITHUB_OUTPUT
           Write-Host "VS: $vs"
-      - name: Preflight legacy DirectX 8 SDK
+      - name: Prepare open-source Direct3D 8 compatibility headers
         shell: pwsh
         run: |
-          $dx = $env:DXSDK_DIR
-          if (-not $dx) {
-            throw "PRECHECK: DXSDK_DIR is not configured. The legacy Last Chaos Engine requires DirectX 8 SDK header d3d8.h and x86 libraries. Do not attempt compilation without a vetted legacy SDK."
+          $root = Join-Path $env:RUNNER_TEMP 'mingw-d3d8'
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/mingw-w64/mingw-w64.git $root
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Push-Location $root
+          git fetch --depth 1 origin 219a392f34146fea03a88dbf197eb387f3928adb
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned mingw-w64 revision unavailable' }
+          git checkout --detach 219a392f34146fea03a88dbf197eb387f3928adb
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git sparse-checkout set mingw-w64-headers/include mingw-w64-crt/lib32/d3d8.def
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
+          $inc = Join-Path $root 'mingw-w64-headers/include'
+          $def = Join-Path $root 'mingw-w64-crt/lib32/d3d8.def'
+          if (-not (Test-Path (Join-Path $inc 'd3d8.h'))) { throw 'Missing open-source d3d8.h' }
+          if (-not (Test-Path $def)) { throw 'Missing d3d8.def' }
+          $out = Join-Path $env:RUNNER_TEMP 'd3d8-msvc'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $lib = Get-ChildItem -Path (Join-Path "${{ steps.vs.outputs.path }}" 'VC/Tools/MSVC') -Recurse -Filter lib.exe | Where-Object { $_.FullName -match 'Hostx64\\x86\\lib.exe      - name: Install Ecc parser prerequisites
+        id: parser
+
+        shell: pwsh
+        run: |
+          choco install winflexbison3 -y --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $directory = Join-Path $env:ChocolateyInstall "lib\\winflexbison3\\tools"
+          if (-not (Test-Path (Join-Path $directory "win_bison.exe"))) { throw "win_bison.exe was not found in $directory" }
+          Copy-Item (Join-Path $directory "win_bison.exe") (Join-Path $directory "bison.exe") -Force
+          Copy-Item (Join-Path $directory "win_flex.exe") (Join-Path $directory "flex.exe") -Force
+          Add-Content $env:GITHUB_PATH $directory
+      - name: Build Last Chaos Ecc tool
+        id: ecc
+
+        shell: pwsh
+        run: |
+          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\\Current\\Bin\\MSBuild.exe"
+          & $msbuild "Ecc\\Ecc_2010.vcxproj" /m:1 /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /v:minimal "/flp:logfile=ecc-win32.log;verbosity=diagnostic"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "Ecc\\Release\\Ecc.exe")) { throw "Ecc.exe was not generated in Ecc/Release" }
+          (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
+      - name: Install Boost thread for Win32
+        id: boost
+
+        shell: pwsh
+        run: |
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
+          if (-not (Test-Path $vcpkg)) { throw "vcpkg.exe not found at $vcpkg" }
+          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $vcpkg integrate install
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\multi_index_container.hpp"))) { throw "Boost MultiIndex missing" }
+          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\format.hpp"))) { throw "Boost format header missing after installation" }
+          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\thread.hpp"))) {
+            throw "Boost thread header missing after installation"
           }
-          if (-not (Test-Path (Join-Path $dx 'Include\\d3d8.h'))) {
-            throw "PRECHECK: Missing DirectX 8 header Include/d3d8.h in DXSDK_DIR=$dx"
-          }
-          if (-not (Test-Path (Join-Path $dx 'Lib\\x86\\d3d8.lib'))) {
-            throw "PRECHECK: Missing DirectX 8 x86 library Lib/x86/d3d8.lib in DXSDK_DIR=$dx"
-          }
+      - name: Attempt Win32 compilation and save diagnostic log
+        if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
+        id: compile
+
+        shell: pwsh
+        run: |
+          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
+          & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
+          if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
+      - name: Publish compiler log and any generated binaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: win32-build-diagnostics
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            build-win32.log
+            ecc-win32.log
+            **/Engine.dll
+            **/Nksp.exe
+ } | Select-Object -First 1
+          if (-not $lib) { throw 'MSVC Win32 lib.exe missing' }
+          & $lib.FullName /nologo /MACHINE:X86 "/DEF:$def" "/OUT:$out/d3d8.lib"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Set-Content (Join-Path $out 'compat.h') '#ifndef __MSABI_LONG' + "`n#define __MSABI_LONG(x) x`n#endif"
+          "CL=/I`"$inc`" /FI`"$out/compat.h`"" >> $env:GITHUB_ENV
+          "LINK=/LIBPATH:`"$out`"" >> $env:GITHUB_ENV
+          "DXSDK_DIR=$out" >> $env:GITHUB_ENV
       - name: Install Ecc parser prerequisites
         id: parser
 
