@@ -56,8 +56,24 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path "Ecc\\Release\\Ecc.exe")) { throw "Ecc.exe was not generated in Ecc/Release" }
           (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
+      - name: Install Boost thread for Win32
+        id: boost
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
+          if (-not (Test-Path $vcpkg)) { throw "vcpkg.exe not found at $vcpkg" }
+          & $vcpkg install boost-thread:x86-windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $vcpkg integrate install
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\thread.hpp"))) {
+            throw "Boost thread header missing after installation"
+          }
       - name: Attempt Win32 compilation and save diagnostic log
-        if: steps.ecc.outcome == 'success'
+        if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
         continue-on-error: true
         shell: pwsh
@@ -78,7 +94,7 @@ jobs:
             **/Engine.dll
             **/Nksp.exe
       - name: Indicate unsuccessful compilation
-        if: steps.compile.outcome == 'failure' || steps.ecc.outcome == 'failure' || steps.parser.outcome == 'failure'
+        if: steps.compile.outcome == 'failure' || steps.ecc.outcome == 'failure' || steps.parser.outcome == 'failure' || steps.boost.outcome == 'failure'
         shell: pwsh
         run: |
           throw "Experimental build failed. Review win32-build-diagnostics artifact; binaries are not validated."
