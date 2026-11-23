@@ -1,10 +1,6 @@
 name: Win32 Last Chaos experimental build
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths:
-      - '.github/workflows/win32-experimental.yml'
 
 jobs:
   build:
@@ -34,9 +30,22 @@ jobs:
           if (-not $vs) { throw "MSBuild not found" }
           "path=$vs" >> $env:GITHUB_OUTPUT
           Write-Host "VS: $vs"
+      - name: Preflight legacy DirectX 8 SDK
+        shell: pwsh
+        run: |
+          $dx = $env:DXSDK_DIR
+          if (-not $dx) {
+            throw "PRECHECK: DXSDK_DIR is not configured. The legacy Last Chaos Engine requires DirectX 8 SDK header d3d8.h and x86 libraries. Do not attempt compilation without a vetted legacy SDK."
+          }
+          if (-not (Test-Path (Join-Path $dx 'Include\\d3d8.h'))) {
+            throw "PRECHECK: Missing DirectX 8 header Include/d3d8.h in DXSDK_DIR=$dx"
+          }
+          if (-not (Test-Path (Join-Path $dx 'Lib\\x86\\d3d8.lib'))) {
+            throw "PRECHECK: Missing DirectX 8 x86 library Lib/x86/d3d8.lib in DXSDK_DIR=$dx"
+          }
       - name: Install Ecc parser prerequisites
         id: parser
-        continue-on-error: true
+
         shell: pwsh
         run: |
           choco install winflexbison3 -y --no-progress
@@ -48,7 +57,7 @@ jobs:
           Add-Content $env:GITHUB_PATH $directory
       - name: Build Last Chaos Ecc tool
         id: ecc
-        continue-on-error: true
+
         shell: pwsh
         run: |
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\\Current\\Bin\\MSBuild.exe"
@@ -58,7 +67,7 @@ jobs:
           (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
       - name: Install Boost thread for Win32
         id: boost
-        continue-on-error: true
+
         shell: pwsh
         run: |
           $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
@@ -77,7 +86,7 @@ jobs:
       - name: Attempt Win32 compilation and save diagnostic log
         if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
-        continue-on-error: true
+
         shell: pwsh
         run: |
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
@@ -95,8 +104,3 @@ jobs:
             ecc-win32.log
             **/Engine.dll
             **/Nksp.exe
-      - name: Indicate unsuccessful compilation
-        if: steps.compile.outcome == 'failure' || steps.ecc.outcome == 'failure' || steps.parser.outcome == 'failure' || steps.boost.outcome == 'failure'
-        shell: pwsh
-        run: |
-          throw "Experimental build failed. Review win32-build-diagnostics artifact; binaries are not validated."
