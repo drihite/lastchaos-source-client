@@ -59,9 +59,8 @@ jobs:
           & $lib.FullName /nologo /MACHINE:X86 "/DEF:$def" "/OUT:$out/d3d8.lib"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Set-Content -Path (Join-Path $out 'compat.h') -Value @('#ifndef __MSABI_LONG','#define __MSABI_LONG(x) x','#endif')
-          "CL=/I`"$inc`" /FI`"$out/compat.h`"" >> $env:GITHUB_ENV
-          "LINK=/LIBPATH:`"$out`"" >> $env:GITHUB_ENV
-          "DXSDK_DIR=$out" >> $env:GITHUB_ENV
+          "DX8_INCLUDE=$inc" >> $env:GITHUB_ENV
+          "DX8_LIB=$out" >> $env:GITHUB_ENV
       - name: Install Ecc parser prerequisites
         id: parser
         shell: pwsh
@@ -104,6 +103,8 @@ jobs:
         id: compile
         shell: pwsh
         run: |
+          $env:CL = '/I"' + $env:DX8_INCLUDE + '" /FI"' + (Join-Path $env:DX8_LIB 'compat.h') + '"'
+          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '"'
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
           & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
           if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
