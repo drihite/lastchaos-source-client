@@ -30,6 +30,29 @@ jobs:
           if (-not $vs) { throw "MSBuild not found" }
           "path=$vs" >> $env:GITHUB_OUTPUT
           Write-Host "VS: $vs"
+      - name: Install Ecc parser prerequisites
+        id: parser
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          choco install winflexbison3 -y --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $tool = Get-Command win_bison.exe -ErrorAction SilentlyContinue
+          if (-not $tool) { throw "win_bison.exe was not found" }
+          $directory = Split-Path $tool.Source
+          Copy-Item (Join-Path $directory "win_bison.exe") (Join-Path $directory "bison.exe") -Force
+          Copy-Item (Join-Path $directory "win_flex.exe") (Join-Path $directory "flex.exe") -Force
+          Add-Content $env:GITHUB_PATH $directory
+      - name: Build Last Chaos Ecc tool
+        id: ecc
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\\Current\\Bin\\MSBuild.exe"
+          & $msbuild "Ecc\\Ecc_2010.vcxproj" /m:1 /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /v:minimal "/flp:logfile=ecc-win32.log;verbosity=diagnostic"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "Ecc\\Release\\Ecc.exe")) { throw "Ecc.exe was not generated in Ecc/Release" }
+          (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
       - name: Attempt Win32 compilation and save diagnostic log
         id: compile
         continue-on-error: true
@@ -47,10 +70,11 @@ jobs:
           retention-days: 7
           path: |
             build-win32.log
+            ecc-win32.log
             **/Engine.dll
             **/Nksp.exe
       - name: Indicate unsuccessful compilation
-        if: steps.compile.outcome == 'failure'
+        if: steps.compile.outcome == 'failure' || steps.ecc.outcome == 'failure' || steps.parser.outcome == 'failure'
         shell: pwsh
         run: |
           throw "Experimental build failed. Review win32-build-diagnostics artifact; binaries are not validated."
