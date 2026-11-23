@@ -57,6 +57,7 @@ jobs:
           if (-not (Test-Path "Ecc\\Release\\Ecc.exe")) { throw "Ecc.exe was not generated in Ecc/Release" }
           (Resolve-Path "Ecc\\Release").Path >> $env:GITHUB_PATH
       - name: Attempt Win32 compilation and save diagnostic log
+        if: steps.ecc.outcome == 'success'
         id: compile
         continue-on-error: true
         shell: pwsh
