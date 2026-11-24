@@ -14,11 +14,11 @@
 #include <Engine/Base/CTString.h>
 #include <Engine/LocalDefine.h>
 
-// [100323: selo] Ä£È­µµ ÇÃ·¡±×
-#define AFFINITY_FLAG_CONTRACT		(1 << 0)	// µî·Ï
-#define AFFINITY_FLAG_DONATE		(1 << 1)	// ±âºÎ
-#define AFFINITY_FLAG_SHOP			(1 << 2)	// »óÁ¡
-#define AFFINITY_FLAG_PRESENT		(1 << 3)	// ¼±¹°
+// [100323: selo] ì¹œí™”ë„ í”Œë˜ê·¸
+#define AFFINITY_FLAG_CONTRACT		(1 << 0)	// ë“±ë¡
+#define AFFINITY_FLAG_DONATE		(1 << 1)	// ê¸°ë¶€
+#define AFFINITY_FLAG_SHOP			(1 << 2)	// ìƒì 
+#define AFFINITY_FLAG_PRESENT		(1 << 3)	// ì„ ë¬¼
 
 class ENGINE_API CAffinityData
 {
@@ -34,7 +34,7 @@ public:
 		};
 	};
 
-	// Ä£È­µµ °³Æí2 Äù½ºÆ® ½ºÆ®·°Æ® Ãß°¡ [2/13/2013 Ranma]
+	// ì¹œí™”ë„ ê°œí¸2 í€˜ìŠ¤íŠ¸ ìŠ¤íŠ¸ëŸ­íŠ¸ ì¶”ê°€ [2/13/2013 Ranma]
 	struct _AffinityQuestInfo
 	{
 		int					index;
@@ -46,7 +46,7 @@ public:
 		};
 	};
 	
-	// Ä£È­µµ °³Æí2 ¸ó½ºÅÍ ½ºÆ®·°Æ® Ãß°¡ [2/13/2013 Ranma]
+	// ì¹œí™”ë„ ê°œí¸2 ëª¬ìŠ¤í„° ìŠ¤íŠ¸ëŸ­íŠ¸ ì¶”ê°€ [2/13/2013 Ranma]
 	struct _AffinityMonsterInfo
 	{
 		int					index;
@@ -64,7 +64,7 @@ public:
 		};
 	};
 	
-	// Ä£È­µµ °³Æí2 º¸»ó¸ñ·Ï ½ºÆ®·°Æ® Ãß°¡ [2/13/2013 Ranma]
+	// ì¹œí™”ë„ ê°œí¸2 ë³´ìƒëª©ë¡ ìŠ¤íŠ¸ëŸ­íŠ¸ ì¶”ê°€ [2/13/2013 Ranma]
 	struct _AffinityRewardInfo
 	{
 		int					index;
@@ -82,11 +82,11 @@ public:
 		int					nIconTextureID;				// affinity texture number
 		int					nIconTextureRow;			// affinity position
 		int					nIconTextureCol;			// affinity position
-		int					needItemIndex;				// [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
-		int					needItemCount;				// [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
-		int					needLevel;				// [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
-		int					needAffinityIndex;				// [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
-		int					needAffinityPoint;				// [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
+		int					needItemIndex;				// [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
+		int					needItemCount;				// [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
+		int					needLevel;				// [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
+		int					needAffinityIndex;				// [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
+		int					needAffinityPoint;				// [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
 		std::vector<_DonationItemInfo>		vecDonateList;	// donation list of affinity
 		std::vector<_AffinityQuestInfo>		vecQuestList;
 		std::vector<_AffinityMonsterInfo>	vecMonsterList;
@@ -118,7 +118,7 @@ public:
 			vecRewardList.clear();
 		};
 
-		//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+		//[sora] ë¯¸ë²ˆì—­ ìŠ¤íŠ¸ë§ index í‘œì‹œ
 		void SetNoTranslate()
 		{
 			char buf[MAX_PATH] = {0,};
@@ -136,7 +136,7 @@ public:
 		const char* GetName()				{ return name.c_str(); }
 	};
 private:
-	struct CompareDonationItemData : public std::binary_function < _DonationItemInfo, int, bool >
+	struct CompareDonationItemData
 	{
 		bool operator() ( const _DonationItemInfo& data, const int index ) const
 		{
@@ -144,13 +144,13 @@ private:
 		}
 	};
 
-	// Ä£È­µµ °³Æí2 ¿£ÇÇ¾¾ ÀÎÆ÷ ¹× ¸ñ·Ï (º¸»ó ¸ñ·Ï ÃßÈÄ ÀúÀå )  [2/6/2013 Ranma]
+	// ì¹œí™”ë„ ê°œí¸2 ì—”í”¼ì”¨ ì¸í¬ ë° ëª©ë¡ (ë³´ìƒ ëª©ë¡ ì¶”í›„ ì €ì¥ )  [2/6/2013 Ranma]
 	struct _NPCInfo
 	{
 		int					index;			// npc index;
 		int					flag;			// npc flag. \\ contract \\ shop \\ donate \\ present
 		int					group_index;	// force index.
-		int					string_index;	// npc text index(client) // [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
+		int					string_index;	// npc text index(client) // [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
 		_NPCInfo() : index(0), flag(0), group_index(0), string_index(0) {};
 	};	
 
@@ -185,9 +185,9 @@ public:
 	_AffinityInfo*			GetAffinityData( const int npcIdx ) const;
 	const int				GetAdminNPCIndex(const int affinityIndex) const;
 	const _NPCInfo*			GetNPC( const int npcIdx ) const;
-	const int				GetNPCFlag( const int npcIdx ) const;	// [100323: selo] Ä£È­µµ ÇÃ·¡±× ¾ò±â
-	const int				GetAffinityIndex( const int npcIdx ) const;	// [100324: selo] Ä£È­µµ ÀÎµ¦½º ¾ò±â
-	const int				GetAffinityStringIndex( const int npcIdx ) const; // [2010/12/07 : Sora] Ä£È­µµ °³¼± 2Â÷
+	const int				GetNPCFlag( const int npcIdx ) const;	// [100323: selo] ì¹œí™”ë„ í”Œë˜ê·¸ ì–»ê¸°
+	const int				GetAffinityIndex( const int npcIdx ) const;	// [100324: selo] ì¹œí™”ë„ ì¸ë±ìŠ¤ ì–»ê¸°
+	const int				GetAffinityStringIndex( const int npcIdx ) const; // [2010/12/07 : Sora] ì¹œí™”ë„ ê°œì„  2ì°¨
 
 	const char*				GetAffinityNameByIndex( const int Idx )	const;
 	_AffinityInfo*			GetAffinityDataByIndex( const int Idx ) const;
@@ -201,7 +201,7 @@ public:
 	// [6/29/2009 rumist] initialized func. 
 	static int				LoadAffinityDataFromFile( CStaticArray<CAffinityData> &apAffinityData, const char* FileName );
 	
-	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	//[sora] ë¯¸ë²ˆì—­ ìŠ¤íŠ¸ë§ index í‘œì‹œ
 	void SetNoTranslate( std::vector<INDEX> transList );
 	void ClearNoTranslate( std::vector<INDEX> transList );
 };
