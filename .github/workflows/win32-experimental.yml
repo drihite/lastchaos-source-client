@@ -63,7 +63,7 @@ jobs:
           if (-not $lib) { throw 'MSVC x86 lib.exe missing' }
           & $lib.FullName /nologo /MACHINE:X86 "/DEF:$def" "/OUT:$out/d3d8.lib"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Set-Content -Path (Join-Path $out 'compat.h') -Value @('#ifndef __MSABI_LONG','#define __MSABI_LONG(x) x','#endif')
+          Set-Content -Path (Join-Path $out 'compat.h') -Value @('#ifndef __MSABI_LONG','#define __MSABI_LONG(x) x','#endif','#ifndef WINBOOL','#define WINBOOL BOOL','#endif')
           "DX8_INCLUDE=$safeInc" >> $env:GITHUB_ENV
           "DX8_LIB=$out" >> $env:GITHUB_ENV
       - name: Install Ecc parser prerequisites
