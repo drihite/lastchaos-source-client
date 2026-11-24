@@ -113,7 +113,7 @@ jobs:
           if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
           $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
           if (-not (Test-Path $vcpkg)) { throw "vcpkg.exe not found at $vcpkg" }
-          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows boost-asio:x86-windows libpng:x86-windows
+          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows boost-asio:x86-windows
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $vcpkg integrate install
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -174,6 +174,73 @@ jobs:
           if (-not (Test-Path $built)) { throw 'Lua 5.1 static library missing after rebuild' }
           Copy-Item $built 'Engine/lua/lua5.1.lib' -Force
           Write-Host "Rebuilt original Lua 5.1 as x86 /MD for diagnostic client build"
+      - name: Rebuild original libpng and zlib under isolated symbol names
+        shell: pwsh
+        run: |
+          # D3DX8 contains ancient PNG/zlib objects; isolate newer copies.
+          $pngDir = (Resolve-Path '3rdparty/lpng163').Path
+          $zDir = (Resolve-Path '3rdparty/zlib-1.2.8').Path
+          $tempDir = Join-Path $env:RUNNER_TEMP 'lc-isolated-libs'
+          New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
+          $prefixPath = Join-Path $tempDir 'lc-png-prefix.h'
+          $symbolNames = [System.Collections.Generic.HashSet[string]]::new()
+          $filesToScan = @(Get-ChildItem $pngDir -File | Where-Object { $_.Extension -eq '.h' -or $_.Extension -eq '.c' })
+          foreach ($source in $filesToScan) {
+            $matches = [regex]::Matches([System.IO.File]::ReadAllText($source.FullName), '\bpng_[A-Za-z_][A-Za-z0-9_]*\b')
+            foreach ($match in $matches) { [void]$symbolNames.Add($match.Value) }
+          }
+          if ($symbolNames.Count -lt 150) { throw "PNG symbol discovery failed: $($symbolNames.Count)" }
+          $renameLines = @('#ifndef LC_PNG_PREFIX_H','#define LC_PNG_PREFIX_H')
+          $renameLines += @($symbolNames | Sort-Object | ForEach-Object { '#define ' + $_ + ' lc_' + $_ })
+          $renameLines += '#endif'
+          [System.IO.File]::WriteAllLines($prefixPath, [string[]]$renameLines)
+          $luaProjectPath = Join-Path $env:RUNNER_TEMP 'lua5.1-v143.vcxproj'
+          if (-not (Test-Path $luaProjectPath)) { throw 'Lua MSBuild template not found' }
+          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" 'MSBuild\Current\Bin\MSBuild.exe'
+          function Build-LegacyStatic([string]$name,[string]$root,[string[]]$sourceNames,[string]$forced) {
+            [xml]$doc = Get-Content $luaProjectPath -Raw
+            $ns = New-Object System.Xml.XmlNamespaceManager($doc.NameTable)
+            $ns.AddNamespace('p','http://schemas.microsoft.com/developer/msbuild/2003')
+            $group = $doc.SelectSingleNode('//p:ItemGroup[p:ClCompile]',$ns)
+            if (-not $group) { throw 'Lua template C source group not found' }
+            $group.RemoveAll()
+            foreach ($basename in $sourceNames) {
+              $sourcePath = Join-Path $root ($basename + '.c')
+              if (-not (Test-Path $sourcePath)) { throw "Missing source $sourcePath" }
+              $n = $doc.CreateElement('ClCompile',$doc.DocumentElement.NamespaceURI)
+              $n.SetAttribute('Include',$sourcePath)
+              [void]$group.AppendChild($n)
+            }
+            $properties = $doc.SelectSingleNode('//p:PropertyGroup[p:TargetName]',$ns)
+            if (-not $properties) { throw 'Lua template output properties missing' }
+            $properties.TargetName = $name
+            $properties.OutDir = (Join-Path $tempDir ($name + '-out')) + '\'
+            $properties.IntDir = (Join-Path $tempDir ($name + '-int')) + '\'
+            $cl = $doc.SelectSingleNode('//p:ItemDefinitionGroup/p:ClCompile',$ns)
+            if (-not $cl) { throw 'Lua template C compile options missing' }
+            $cl.PreprocessorDefinitions = 'Z_PREFIX;' + [string]$cl.PreprocessorDefinitions
+            $incs = $doc.CreateElement('AdditionalIncludeDirectories',$doc.DocumentElement.NamespaceURI)
+            $incs.InnerText = "$pngDir;$zDir;%(AdditionalIncludeDirectories)"
+            [void]$cl.AppendChild($incs)
+            if ($forced) {
+              $fi = $doc.CreateElement('ForcedIncludeFiles',$doc.DocumentElement.NamespaceURI)
+              $fi.InnerText = $forced
+              [void]$cl.AppendChild($fi)
+            }
+            $projPath = Join-Path $tempDir ($name + '.vcxproj')
+            $doc.Save($projPath)
+            & $msbuild $projPath /m:1 /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /v:minimal "/flp:logfile=$name-win32.log;verbosity=diagnostic"
+            if ($LASTEXITCODE -ne 0) { throw "Failed building isolated $name" }
+            $libPath = Join-Path (Join-Path $tempDir ($name + '-out')) ($name + '.lib')
+            if (-not (Test-Path $libPath)) { throw "Missing isolated $name.lib" }
+            Copy-Item $libPath (Join-Path $env:DX8_LIB ($name + '.lib')) -Force
+          }
+          $zSources = @('adler32','compress','crc32','deflate','gzclose','gzlib','gzread','gzwrite','infback','inffast','inflate','inftrees','trees','uncompr','zutil')
+          $pngSources = @('png','pngerror','pngget','pngmem','pngpread','pngread','pngrio','pngrtran','pngrutil','pngset','pngtrans','pngwio','pngwrite','pngwtran','pngwutil')
+          Build-LegacyStatic 'lc_z' $zDir $zSources ''
+          Build-LegacyStatic 'lc_png' $pngDir $pngSources $prefixPath
+          "LC_PNG_PREFIX=$prefixPath" >> $env:GITHUB_ENV
+          Write-Host "Rebuilt x86 original libpng with $($symbolNames.Count) isolated symbols; paired prefixed zlib"
       - name: Configure diagnostic-only legacy Engine link
         shell: pwsh
         run: |
@@ -203,32 +270,14 @@ jobs:
           if (-not $engineInc) { throw "Engine compiler settings missing" }
           $oldDefs = [string]$engineInc.PreprocessorDefinitions
           $engineInc.PreprocessorDefinitions = "PNG_USE_DLL;$oldDefs"
-          # Import PNG via IAT-only DATA entries to avoid function thunks
-          # conflicting with the PNG symbols built into d3dx8.lib.
-          $toolsPath = Join-Path "${{ steps.vs.outputs.path }}" 'VC/Tools/MSVC'
-          $dumpbin = Get-ChildItem $toolsPath -Recurse -Filter dumpbin.exe | Where-Object { $_.FullName -match 'Hostx64.*x86' } | Select-Object -First 1
-          $libtool = Get-ChildItem $toolsPath -Recurse -Filter lib.exe | Where-Object { $_.FullName -match 'Hostx64.*x86' } | Select-Object -First 1
-          if (-not $dumpbin -or -not $libtool) { throw 'MSVC import library tools not found' }
-          $exports = & $dumpbin.FullName /nologo /exports $pngDlls[0].FullName
-          if ($LASTEXITCODE -ne 0) { throw 'Unable to read PNG DLL exports' }
-          $names = @($exports | ForEach-Object {
-            if ($_ -match '^\s*\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(png_[A-Za-z0-9_]+)(?:\s|$)') {
-              $Matches[1]
-            }
-          } | Sort-Object -Unique)
-          if ($names.Count -lt 50 -or $names -notcontains 'png_sig_cmp' -or $names -notcontains 'png_set_longjmp_fn') {
-            throw "PNG export enumeration incomplete: $($names.Count) functions"
-          }
-          $defPath = Join-Path $env:DX8_LIB 'clientpng.def'
-          $defText = "LIBRARY $($pngDlls[0].Name)" + "`r`nEXPORTS`r`n" + (($names | ForEach-Object { "  $_ DATA" }) -join "`r`n") + "`r`n"
-          [System.IO.File]::WriteAllText($defPath, $defText)
-          & $libtool.FullName /nologo /MACHINE:X86 "/DEF:$defPath" "/OUT:$env:DX8_LIB/clientpng.lib"
-          if ($LASTEXITCODE -ne 0) { throw 'Failed to generate data-only PNG DLL import library' }
-          $symbols = & $dumpbin.FullName /nologo /linkermember:1 (Join-Path $env:DX8_LIB 'clientpng.lib')
-          if ($LASTEXITCODE -ne 0) { throw 'Could not inspect generated PNG import library' }
-          if (($symbols -join "`n") -match '(?m)^\s*_png_sig_cmp\s*$') { throw 'PNG import lib still defines conflicting function thunk' }
-          "PNG_CLIENT_DLL=$($pngDlls[0].FullName)" >> $env:GITHUB_ENV
-          Write-Host "Generated DATA-only PNG import library for $($names.Count) exports"
+          # Apply renames only to Texture.cpp; other Engine code keeps original zlib ABI.
+          $texture = $doc.SelectSingleNode('//p:ClCompile[@Include="Graphics\Texture.cpp"]',$ns)
+          if (-not $texture) { throw 'Texture.cpp MSBuild entry not found' }
+          if (-not (Test-Path $env:LC_PNG_PREFIX)) { throw 'Isolated PNG header missing' }
+          $force = $doc.CreateElement('ForcedIncludeFiles',$doc.DocumentElement.NamespaceURI)
+          $force.SetAttribute('Condition',"'$(Configuration)|$(Platform)'=='GERLIVE|Win32'")
+          $force.InnerText = "$env:LC_PNG_PREFIX;%(ForcedIncludeFiles)"
+          [void]$texture.AppendChild($force)
           $doc.Save((Resolve-Path $projPath).Path)
           Write-Host 'Diagnostic-only link: SAFESEH:NO, no legacy libpng duplicate, legacy stdio definitions'
       - name: Attempt Win32 compilation and save diagnostic log
@@ -237,7 +286,7 @@ jobs:
         shell: pwsh
         run: |
           $env:CL = '/I"' + $env:DX8_INCLUDE + '"'
-          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib /DEFAULTLIB:clientpng.lib'
+          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib /DEFAULTLIB:lc_png.lib /DEFAULTLIB:lc_z.lib'
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
           & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
           if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
@@ -252,3 +301,5 @@ jobs:
             build-win32.log
             ecc-win32.log
             lua-win32.log
+            lc_png-win32.log
+            lc_z-win32.log
