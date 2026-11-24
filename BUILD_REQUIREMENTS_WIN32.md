@@ -30,3 +30,21 @@ This source tree is a legacy Visual C++ 2010 project. The GitHub Actions build i
 References:
 - https://github.com/apitrace/apitrace/wiki/DirectX-SDK
 - https://learn.microsoft.com/en-us/windows/win32/directx-sdk--august-2009-
+
+
+## New verified result: CI run #16 (2026-11-24)
+
+Run: https://github.com/drihite/lastchaos-source-client/actions/runs/45363099952
+
+The experimental runner **successfully prepared Direct3D 8 and D3DX8 SDK build-only headers/libraries, built Ecc, and compiled Engine C++ sources far enough to invoke the Engine linker**. It did not produce a verified usable Engine.dll.
+
+Actual linker failures (from run #16; these are distinct causes, not missing D3DX headers):
+
+- `LNK2026` (70 instances): old D3DX8 static-library objects do not satisfy the modern linker's SAFESEH requirement.
+- `LNK2005` (41 instances): duplicated PNG symbols exported both by `d3dx8.lib` (which embeds PNG source) and the client's `libpng.lib`.
+- `LNK2001` (4 instances): CRT symbol mismatches from prebuilt old Lua/TinyXML/libpng libraries, including `___iob_func`, `_sscanf_s`, `__vsnprintf_s`, `__imp____iob_func`.
+- `LNK1120`: four symbols unresolved, so link failed.
+
+**Do not suppress duplicate symbols with `/FORCE:MULTIPLE` or indiscriminately disable security features and describe the binary as production-ready.** Instead reproduce with a compatible MSVC v100 build environment and/or rebuild third-party libraries coherently using one toolchain and eliminate PNG duplicate ownership at the link stage. Disabling SAFESEH for legacy static libraries may be needed temporarily for a diagnostic build, but is a security tradeoff requiring explicit validation before distribution.
+
+Source-specific target and link dependency checks remain necessary: `Engine.dll` first, then `Nksp.exe`, then import/export and protocol testing.
