@@ -42,38 +42,49 @@ jobs:
           if (-not $vs) { throw "MSBuild not found" }
           "path=$vs" >> $env:GITHUB_OUTPUT
           Write-Host "VS: $vs"
-      - name: Prepare open-source Direct3D 8 compatibility headers
+      - name: Prepare legacy DirectX 8 and D3DX8 build dependencies
         shell: pwsh
         run: |
-          $root = Join-Path $env:RUNNER_TEMP 'mingw-d3d8'
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/mingw-w64/mingw-w64.git $root
+          # Build-only SDK retrieval; do not commit or upload SDK material.
+          # Third-party archive of Microsoft's SDK: license must be respected.
+          $root = Join-Path $env:RUNNER_TEMP 'directx8-sdk'
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/edgeforce/directx8.git $root
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Push-Location $root
-          git fetch --depth 1 origin 219a392f34146fea03a88dbf197eb387f3928adb
-          if ($LASTEXITCODE -ne 0) { throw 'Pinned source unavailable' }
-          git checkout --detach 219a392f34146fea03a88dbf197eb387f3928adb
+          git fetch --depth 1 origin e6fa10f5f92bf523c15fdb068206ce25c8d2121d
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned SDK source unavailable' }
+          git checkout --detach e6fa10f5f92bf523c15fdb068206ce25c8d2121d
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          git sparse-checkout set mingw-w64-headers/include mingw-w64-crt/lib32
+          git sparse-checkout set include lib license
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Pop-Location
-          $inc = Join-Path $root 'mingw-w64-headers/include'
-          $def = Join-Path $root 'mingw-w64-crt/lib32/d3d8.def'
-          if (-not (Test-Path (Join-Path $inc 'd3d8.h'))) { throw 'Missing d3d8.h' }
-          if (-not (Test-Path $def)) { throw 'Missing d3d8.def' }
-          $out = Join-Path $env:RUNNER_TEMP 'd3d8-msvc'
-          New-Item -ItemType Directory -Force -Path $out | Out-Null
-          $safeInc = Join-Path $out 'include'
-          New-Item -ItemType Directory -Force -Path $safeInc | Out-Null
-          foreach ($header in @('d3d8.h', 'd3d8types.h', 'd3d8caps.h')) {
-            Copy-Item (Join-Path $inc $header) (Join-Path $safeInc $header) -Force
+
+          $srcInc = Join-Path $root 'include'
+          $srcLib = Join-Path $root 'lib'
+          $out = Join-Path $env:RUNNER_TEMP 'legacy-dx8-build'
+          $inc = Join-Path $out 'include'
+          $lib = Join-Path $out 'lib'
+          New-Item -ItemType Directory -Force -Path $inc,$lib | Out-Null
+          $headers = @(
+            'd3d8.h', 'd3d8types.h', 'd3d8caps.h',
+            'd3dx8.h', 'd3dx8core.h', 'd3dx8tex.h',
+            'd3dx8math.h', 'd3dx8math.inl',
+            'd3dx8mesh.h', 'd3dx8shape.h', 'd3dx8effect.h',
+            'dxfile.h', 'dxerr8.h'
+          )
+          foreach ($file in $headers) {
+            $source = Join-Path $srcInc $file
+            if (-not (Test-Path $source)) { throw "DX8 SDK required header missing: $file" }
+            Copy-Item $source (Join-Path $inc $file) -Force
           }
-          $lib = Get-ChildItem -Path (Join-Path '${{ steps.vs.outputs.path }}' 'VC/Tools/MSVC') -Recurse -Filter lib.exe | Where-Object { $_.FullName.Contains('Hostx64') -and $_.FullName.Contains('x86') } | Select-Object -First 1
-          if (-not $lib) { throw 'MSVC x86 lib.exe missing' }
-          & $lib.FullName /nologo /MACHINE:X86 "/DEF:$def" "/OUT:$out/d3d8.lib"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Set-Content -Path (Join-Path $out 'compat.h') -Value @('#ifndef __MSABI_LONG','#define __MSABI_LONG(x) x','#endif','#ifndef WINBOOL','#define WINBOOL BOOL','#endif')
-          "DX8_INCLUDE=$safeInc" >> $env:GITHUB_ENV
-          "DX8_LIB=$out" >> $env:GITHUB_ENV
+          foreach ($file in @('d3d8.lib', 'd3dx8.lib', 'dxguid.lib', 'd3dxof.lib')) {
+            $source = Join-Path $srcLib $file
+            if (-not (Test-Path $source)) { throw "DX8 SDK required Win32 library missing: $file" }
+            Copy-Item $source (Join-Path $lib $file) -Force
+          }
+          "DX8_INCLUDE=$inc" >> $env:GITHUB_ENV
+          "DX8_LIB=$lib" >> $env:GITHUB_ENV
+          Write-Host "Prepared legacy DirectX8 and D3DX8 build-only headers and libs"
       - name: Install Ecc parser prerequisites
         id: parser
         shell: pwsh
@@ -117,8 +128,8 @@ jobs:
         id: compile
         shell: pwsh
         run: |
-          $env:CL = '/I"' + $env:DX8_INCLUDE + '" /FI"' + (Join-Path $env:DX8_LIB 'compat.h') + '"'
-          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '"'
+          $env:CL = '/I"' + $env:DX8_INCLUDE + '"'
+          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib'
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
           & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
           if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
