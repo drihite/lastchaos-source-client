@@ -1,4 +1,11 @@
 %{
+// Allow large legacy .es entity definitions to exceed Bison's default parser stack depth.
+#ifndef YYMAXDEPTH
+#define YYMAXDEPTH 100000
+#endif
+#ifndef YYINITDEPTH
+#define YYINITDEPTH 400
+#endif
 // rcg10042001 Changed to specify Ecc directory...
 #include "Ecc/StdH.h"
 #include "Ecc/Main.h"
