@@ -123,6 +123,25 @@ jobs:
           if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\thread.hpp"))) {
             throw "Boost thread header missing after installation"
           }
+      - name: Configure diagnostic-only legacy Engine link
+        shell: pwsh
+        run: |
+          # Diagnostics only: SAFESEH:NO reduces exploit mitigations; do not distribute resulting binaries.
+          $projPath = 'Engine/Engine_2010.vcxproj'
+          [xml]$doc = Get-Content $projPath -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($doc.NameTable)
+          $ns.AddNamespace('p', 'http://schemas.microsoft.com/developer/msbuild/2003')
+          $matches = @($doc.SelectNodes('//p:ItemDefinitionGroup', $ns) | Where-Object { $_.Condition -like '*GERLIVE|Win32*' -and $_.Condition -notlike '*Kalydo*' })
+          if ($matches.Count -ne 1) { throw "Expected one GERLIVE|Win32 group; got $($matches.Count)" }
+          $link = $matches[0].SelectSingleNode('p:Link', $ns)
+          if (-not $link) { throw 'Engine GERLIVE linker settings missing' }
+          $se = $doc.CreateElement('ImageHasSafeExceptionHandlers', $doc.DocumentElement.NamespaceURI)
+          $se.InnerText = 'false'
+          [void]$link.AppendChild($se)
+          $oldOpts = [string]$link.AdditionalOptions
+          $link.AdditionalOptions = "$oldOpts /NODEFAULTLIB:libpng.lib legacy_stdio_definitions.lib"
+          $doc.Save((Resolve-Path $projPath).Path)
+          Write-Host 'Diagnostic-only link: SAFESEH:NO, no legacy libpng duplicate, legacy stdio definitions'
       - name: Attempt Win32 compilation and save diagnostic log
         if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
@@ -133,7 +152,7 @@ jobs:
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
           & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
           if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
-      - name: Publish compiler log and any generated binaries
+      - name: Publish diagnostic logs only (no unverified binaries)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -143,5 +162,3 @@ jobs:
           path: |
             build-win32.log
             ecc-win32.log
-            **/Engine.dll
-            **/Nksp.exe
