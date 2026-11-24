@@ -258,28 +258,15 @@ jobs:
           [void]$link.AppendChild($se)
           $oldOpts = [string]$link.AdditionalOptions
           $link.AdditionalOptions = "$oldOpts /NODEFAULTLIB:libpng.lib /NODEFAULTLIB:libpng16.lib /NODEFAULTLIB:libz.lib legacy_stdio_definitions.lib"
-          # Load libpng 1.6 from a separate DLL rather than mixing its symbols
-          # with the older libpng objects statically embedded in d3dx8.lib.
-          $pngRoot = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed\x86-windows'
-          if (-not (Test-Path $pngRoot)) { $pngRoot = 'C:\vcpkg\installed\x86-windows' }
-          $pngLibs = @(Get-ChildItem -Path (Join-Path $pngRoot 'lib') -Filter '*png*.lib' -File)
-          if ($pngLibs.Count -ne 1) { throw "Expected one libpng import library; got $($pngLibs.Count)" }
-          $pngDlls = @(Get-ChildItem -Path (Join-Path $pngRoot 'bin') -Filter '*png*.dll' -File)
-          if ($pngDlls.Count -ne 1) { throw "Expected one libpng runtime DLL; got $($pngDlls.Count)" }
-          $engineInc = $matches[0].SelectSingleNode('p:ClCompile', $ns)
-          if (-not $engineInc) { throw "Engine compiler settings missing" }
-          $oldDefs = [string]$engineInc.PreprocessorDefinitions
-          $engineInc.PreprocessorDefinitions = "PNG_USE_DLL;$oldDefs"
           # Apply renames only to Texture.cpp; other Engine code keeps original zlib ABI.
           $texture = $doc.SelectSingleNode('//p:ClCompile[@Include="Graphics\Texture.cpp"]',$ns)
           if (-not $texture) { throw 'Texture.cpp MSBuild entry not found' }
           if (-not (Test-Path $env:LC_PNG_PREFIX)) { throw 'Isolated PNG header missing' }
           $force = $doc.CreateElement('ForcedIncludeFiles',$doc.DocumentElement.NamespaceURI)
-          $force.SetAttribute('Condition',"'$(Configuration)|$(Platform)'=='GERLIVE|Win32'")
           $force.InnerText = "$env:LC_PNG_PREFIX;%(ForcedIncludeFiles)"
           [void]$texture.AppendChild($force)
           $doc.Save((Resolve-Path $projPath).Path)
-          Write-Host 'Diagnostic-only link: SAFESEH:NO, no legacy libpng duplicate, legacy stdio definitions'
+          Write-Host 'Diagnostic Engine link: isolated PNG/zlib, legacy stdio; SAFESEH disabled for testing only'
       - name: Attempt Win32 compilation and save diagnostic log
         if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
