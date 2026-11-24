@@ -191,7 +191,10 @@ jobs:
           }
           if ($symbolNames.Count -lt 150) { throw "PNG symbol discovery failed: $($symbolNames.Count)" }
           $renameLines = @('#ifndef LC_PNG_PREFIX_H','#define LC_PNG_PREFIX_H')
-          $renameLines += @($symbolNames | Sort-Object | ForEach-Object { '#define ' + $_ + ' lc_' + $_ })
+          # Do not rename function-like debugging macros: pngdebug.h supplies their implementations.
+          # Renaming them prevents the macros from being defined and creates unresolved lc_png_debug* calls.
+          $macroOnly = @('png_debug','png_debug1','png_debug2')
+          $renameLines += @($symbolNames | Where-Object { $_ -notin $macroOnly } | Sort-Object | ForEach-Object { '#define ' + $_ + ' lc_' + $_ })
           $renameLines += '#endif'
           [System.IO.File]::WriteAllLines($prefixPath, [string[]]$renameLines)
           $luaProjectPath = Join-Path $env:RUNNER_TEMP 'lua5.1-v143.vcxproj'
@@ -218,7 +221,8 @@ jobs:
             $properties.IntDir = (Join-Path $tempDir ($name + '-int')) + '\'
             $cl = $doc.SelectSingleNode('//p:ItemDefinitionGroup/p:ClCompile',$ns)
             if (-not $cl) { throw 'Lua template C compile options missing' }
-            $cl.PreprocessorDefinitions = 'Z_PREFIX;' + [string]$cl.PreprocessorDefinitions
+            # Force function exports for png_get_uint_16/32; libpng read macros otherwise override symbol prefixes.
+            $cl.PreprocessorDefinitions = 'Z_PREFIX;PNG_NO_USE_READ_MACROS;' + [string]$cl.PreprocessorDefinitions
             $incs = $doc.CreateElement('AdditionalIncludeDirectories',$doc.DocumentElement.NamespaceURI)
             $incs.InnerText = "$pngDir;$zDir;%(AdditionalIncludeDirectories)"
             [void]$cl.AppendChild($incs)
