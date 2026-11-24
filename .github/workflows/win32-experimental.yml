@@ -341,6 +341,22 @@ jobs:
             if (-not (Test-Path -LiteralPath $p -PathType Leaf)) { throw "Missing core binary: $p" }
             Copy-Item -LiteralPath $p -Destination (Join-Path $folder $name)
           }
+          # Boost is dynamically linked by the x86 client. The previous ZIP omitted the runtime DLL.
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $boostBin = Join-Path $vcpkgRoot 'installed\x86-windows\bin'
+          if (-not (Test-Path -LiteralPath $boostBin -PathType Container)) { throw "Missing x86 vcpkg bin: $boostBin" }
+          $boostDlls = @(Get-ChildItem -LiteralPath $boostBin -Filter 'boost_*.dll' -File)
+          $threadDlls = @($boostDlls | Where-Object { $_.Name -match '^boost_thread-vc143-mt-x32-' })
+          if ($threadDlls.Count -lt 1) { throw "Missing boost_thread-vc143-mt-x32 runtime library in $boostBin" }
+          foreach ($dll in $boostDlls) {
+            Copy-Item -LiteralPath $dll.FullName -Destination (Join-Path $folder $dll.Name) -Force
+            Write-Host "Bundled Boost x86 dependency: $($dll.Name)"
+          }
+          # Boost Software License requires keeping the copyright/license notice with distributions.
+          $boostLicense = Join-Path $vcpkgRoot 'installed\x86-windows\share\boost-thread\copyright'
+          if (-not (Test-Path -LiteralPath $boostLicense -PathType Leaf)) { throw "Boost redistributable license missing: $boostLicense" }
+          Copy-Item -LiteralPath $boostLicense -Destination (Join-Path $folder 'BOOST-LICENSE.txt')
           @'
           PRIVATE TEST ONLY — NOT A COMPLETE GAME INSTALLATION
           Original Last Chaos Win32 client from xtrap-free-win32.
@@ -348,7 +364,7 @@ jobs:
           Engine.dll was linked with /SAFESEH:NO to accommodate old DirectX8 and IJL static libraries.
           This reduces exploit mitigations. Use only in an isolated, controlled test environment.
           Do not run as administrator. Do not publish or redistribute as a finished release.
-          No third-party SDK libraries, DirectX runtime, VC++ redistributables, game assets,
+          Includes licensed Boost x86 DLLs and their license notice, but no DirectX SDK, VC++ redistributables, game assets,
           server files or game data archives are included in this ZIP.
           You will need a legally obtained compatible original client data installation.
           Check dependencies against win32-client-audit.txt in diagnostics artifact.
