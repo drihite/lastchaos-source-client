@@ -1,3 +1,5 @@
 One-time explicit user-requested private compatibility build of original Last Chaos client without X-Trap.
 This file is the sole push trigger for the Win32 workflow. No game data or external SDK redistributables are uploaded.
 2026-11-24
+
+2026-11-24: rebuild requested after Windows reported missing boost_thread-vc143-mt-x32-1_92.dll.
