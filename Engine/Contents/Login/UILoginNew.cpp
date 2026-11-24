@@ -8,7 +8,7 @@
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/GameState.h>
 #include <Engine/Network/TcpIpConnection.h>
-#include <Engine/Sound/SoundLibrary.h>		// ¼­Á¤¿ø ·Î±ä °ü·Ã »ç¿îµå Ã³¸®
+#include <Engine/Sound/SoundLibrary.h>		// ì„œì •ì› ë¡œê¸´ ê´€ë ¨ ì‚¬ìš´ë“œ ì²˜ë¦¬
 #include <Engine/Base/md5.h>
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/Login/LoginNew.h>
@@ -30,8 +30,8 @@
 
 enum eXMAS_EFFECT_STEP
 {
-	eEFFECT_STEP_READY = 0, // ÁØºñ
-	eEFFECT_STEP_FINISH,	// ¸ğµç ½ºÅÇÀ» ¸¶Ä§
+	eEFFECT_STEP_READY = 0, // ì¤€ë¹„
+	eEFFECT_STEP_FINISH,	// ëª¨ë“  ìŠ¤íƒ­ì„ ë§ˆì¹¨
 };
 
 #ifdef EUROUPEAN_SERVER_LOGIN
@@ -169,9 +169,9 @@ BOOL CUILoginNew::TryToLogin()
 		pUIManager->CloseMessageBox( MSGCMD_LOGIN_ERROR );
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "·Î±×ÀÎ" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "ë¡œê·¸ì¸" ), UMBS_OK,
 			UI_LOGIN, MSGCMD_LOGIN_ERROR );
-		strMessage = _S( 185, "¾ÆÀÌµğ¸¦ ÀÔ·ÂÇØÁÖ½Ê½Ã¿À." );
+		strMessage = _S( 185, "ì•„ì´ë””ë¥¼ ì…ë ¥í•´ì£¼ì‹­ì‹œì˜¤." );
 		MsgBoxInfo.AddString( strMessage );
 		pUIManager->CreateMessageBox(MsgBoxInfo);
 
@@ -182,9 +182,9 @@ BOOL CUILoginNew::TryToLogin()
 		pUIManager->CloseMessageBox( MSGCMD_LOGIN_ERROR );
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "·Î±×ÀÎ" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "ë¡œê·¸ì¸" ), UMBS_OK,
 			UI_LOGIN, MSGCMD_LOGIN_ERROR );
-		strMessage = _S( 186, "ÆĞ½º¿öµå¸¦ ÀÔ·ÂÇØÁÖ½Ê½Ã¿À." );
+		strMessage = _S( 186, "íŒ¨ìŠ¤ì›Œë“œë¥¼ ì…ë ¥í•´ì£¼ì‹­ì‹œì˜¤." );
 		MsgBoxInfo.AddString( strMessage );
 		pUIManager->CreateMessageBox(MsgBoxInfo);
 
@@ -193,7 +193,7 @@ BOOL CUILoginNew::TryToLogin()
 
 	CGame* _pGame = pUIManager->GetGame();
 	
-	// NOTE : ¿©±â¼­ ¼ÒÄÏÀ» »ı¼ºÇÏ°í ÀÖÀ½.
+	// NOTE : ì—¬ê¸°ì„œ ì†Œì¼“ì„ ìƒì„±í•˜ê³  ìˆìŒ.
 	if(_pGame->PreNewGame())
 	{
 		return pLoginData->ConnectToLoginServer();
@@ -439,11 +439,11 @@ void CUILoginNew::initialize()
 
 	if (m_pCbSelServer != NULL)
 	{
-		m_pCbSelServer->AddString( _S(6084, "°¡¹Ì°í ¼­¹ö·Î Á¢¼Ó"));
+		m_pCbSelServer->AddString( _S(6084, "ê°€ë¯¸ê³  ì„œë²„ë¡œ ì ‘ì†"));
 		m_pCbSelServer->SetCurSel(DEF_BASIC_SERVER);
 		m_pCbSelServer->SetEnable(FALSE);
 #ifdef EUROUPEAN_SERVER_LOGIN
-		m_pCbSelServer->AddString( _S(5777, "À¯·¯ÇÇ¾È ¼­¹ö·Î Á¢¼Ó"));
+		m_pCbSelServer->AddString( _S(5777, "ìœ ëŸ¬í”¼ì•ˆ ì„œë²„ë¡œ ì ‘ì†"));
 		m_pCbSelServer->SetEnable(TRUE);
 		if (g_iConnectEuroupean)
 		{
@@ -494,7 +494,7 @@ void CUILoginNew::ReadPreviousId()
 }	
 
 #ifdef DEV_LOGIN
-void CUILoginNew::ReadTextDevPreviousIdPw() // Login.txt ¿¡ ÀúÀåµÈ ¾ÆÀÌµğ ÆĞ½º¿öµå ¾ò¾î¿À±â
+void CUILoginNew::ReadTextDevPreviousIdPw() // Login.txt ì— ì €ì¥ëœ ì•„ì´ë”” íŒ¨ìŠ¤ì›Œë“œ ì–»ì–´ì˜¤ê¸°
 {
 	CTString strFullPath = _fnmApplicationPath.FileDir();
 	CTString fileName = strFullPath + "Bin\\pass.txt";
@@ -648,7 +648,7 @@ void CUILoginNew::sendIP()
 {
 #if		!defined(WORLD_EDITOR)
 	CNetClient _net;
-	boost::asio::io_service& _service = _net.get_service();
+	boost::asio::io_context& _service = _net.get_service();
 
 	std::string strIP, strPort;
 
@@ -718,9 +718,9 @@ void CUILoginNew::updateLogoXmas( float fDelta )
 
 	static float falphaLv1 = DEF_ALPHA_LV_XMAS_MIN;
 	static float falphaLv2 = DEF_ALPHA_LV_XMAS_MIN;
-	static bool	bUp = true; // °¨¼ÒÀÎÁö, Áõ°¡ÀÎÁö
-	static bool	bEffect1 = true; // Ã¹¹øÂ° ÀÎÁö µÎ¹øÂ° ÀÎÁö
-	static int nEffectStep = eEFFECT_STEP_READY; // ´ÙÀ½ ÀÌÆåÆ®·Î ³Ñ¾î°¡±âÀ§ÇÑ ½ºÅÇ 
+	static bool	bUp = true; // ê°ì†Œì¸ì§€, ì¦ê°€ì¸ì§€
+	static bool	bEffect1 = true; // ì²«ë²ˆì§¸ ì¸ì§€ ë‘ë²ˆì§¸ ì¸ì§€
+	static int nEffectStep = eEFFECT_STEP_READY; // ë‹¤ìŒ ì´í™íŠ¸ë¡œ ë„˜ì–´ê°€ê¸°ìœ„í•œ ìŠ¤íƒ­ 
 		
 	float* pAlpha = NULL;
 	CUIImage* pImg = NULL;
