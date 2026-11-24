@@ -1,9 +1,14 @@
 name: Win32 Last Chaos experimental build
 on:
+  # A single push to the trigger file runs the private compatibility test once.
+  push:
+    branches: [master]
+    paths:
+      - 'docs/TRIGGER_PRIVATE_TEST.txt'
   workflow_dispatch:
     inputs:
       link_mode:
-        description: 'Strict SafeSEH check or isolated legacy compatibility audit (never upload binaries)'
+        description: 'Strict SafeSEH check or private legacy compatibility build (unverified; no third-party redistributables)'
         required: true
         type: choice
         default: strict_safeseh
@@ -262,7 +267,7 @@ jobs:
         shell: pwsh
         run: |
           # SAFESEH strict is the default. Legacy mode exists only for diagnostic inventories, not release.
-          $linkMode = '${{ inputs.link_mode }}'
+          $linkMode = '${{ github.event_name }}' -eq 'push' ? 'legacy_compat_audit' : '${{ inputs.link_mode }}'
           if ($linkMode -notin @('strict_safeseh','legacy_compat_audit')) { throw "Unsupported link mode: $linkMode" }
           $projPath = 'Engine/Engine_2010.vcxproj'
           [xml]$doc = Get-Content $projPath -Raw
@@ -299,7 +304,7 @@ jobs:
           [System.IO.File]::WriteAllText((Resolve-Path $texturePath).Path,$textureText)
           Write-Host 'Injected PNG symbol remapping into Texture.cpp after stdh.h/PCH'
           $doc.Save((Resolve-Path $projPath).Path)
-          Write-Host "Win32 diagnostic link mode: $linkMode. No binaries will be published."
+          Write-Host "Win32 link mode: $linkMode. Legacy outputs are only for private testing; no SDK or asset files will be distributed."
       - name: Attempt Win32 compilation and save diagnostic log
         if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
@@ -323,6 +328,43 @@ jobs:
           if (-not $dumpbin) { throw 'dumpbin.exe x86 tool not found' }
           & .\.github\scripts\audit-win32-client.ps1 -BinDir 'D:\Bin' -ReportPath 'win32-client-audit.txt' -DumpbinExe $dumpbin.FullName
           if (-not (Test-Path 'win32-client-audit.txt')) { throw 'PE diagnostic report missing' }
+      - name: Package private Win32 test executables (legacy build only)
+        if: steps.compile.outcome == 'success' && (github.event_name == 'push' || inputs.link_mode == 'legacy_compat_audit')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $folder = Join-Path $PWD 'private-win32-test'
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          $required = 'Nksp.exe','Engine.dll','EntitiesMP.dll','GameMP.dll','Shaders.dll'
+          foreach ($name in $required) {
+            $p = Join-Path 'D:\Bin' $name
+            if (-not (Test-Path -LiteralPath $p -PathType Leaf)) { throw "Missing core binary: $p" }
+            Copy-Item -LiteralPath $p -Destination (Join-Path $folder $name)
+          }
+          @'
+          PRIVATE TEST ONLY — NOT A COMPLETE GAME INSTALLATION
+          Original Last Chaos Win32 client from xtrap-free-win32.
+          X-Trap build defines are disabled. Runtime startup has NOT been tested.
+          Engine.dll was linked with /SAFESEH:NO to accommodate old DirectX8 and IJL static libraries.
+          This reduces exploit mitigations. Use only in an isolated, controlled test environment.
+          Do not run as administrator. Do not publish or redistribute as a finished release.
+          No third-party SDK libraries, DirectX runtime, VC++ redistributables, game assets,
+          server files or game data archives are included in this ZIP.
+          You will need a legally obtained compatible original client data installation.
+          Check dependencies against win32-client-audit.txt in diagnostics artifact.
+          Windows 10/11 and server protocol compatibility remain UNVERIFIED.
+          '@ | Set-Content -LiteralPath (Join-Path $folder 'READ_ME_FIRST.txt') -Encoding UTF8
+          Get-ChildItem -Path $folder -File | Get-FileHash -Algorithm SHA256 | ForEach-Object {
+            "$($_.Hash)  $([System.IO.Path]::GetFileName($_.Path))"
+          } | Set-Content -LiteralPath (Join-Path $folder 'SHA256SUMS.txt') -Encoding ASCII
+      - name: Upload private test executable package (unverified, legacy-only)
+        if: steps.compile.outcome == 'success' && (github.event_name == 'push' || inputs.link_mode == 'legacy_compat_audit')
+        uses: actions/upload-artifact@v4
+        with:
+          name: PRIVATE-TEST-UNVERIFIED-LastChaos-Win32
+          if-no-files-found: error
+          retention-days: 3
+          path: private-win32-test/
       - name: Publish diagnostic logs only (no unverified binaries)
         if: always()
         uses: actions/upload-artifact@v4
