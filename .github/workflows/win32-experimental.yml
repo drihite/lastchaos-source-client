@@ -1,10 +1,15 @@
 name: Win32 Last Chaos experimental build
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths:
-      - '.github/workflows/win32-experimental.yml'
+    inputs:
+      link_mode:
+        description: 'Strict SafeSEH check or isolated legacy compatibility audit (never upload binaries)'
+        required: true
+        type: choice
+        default: strict_safeseh
+        options:
+          - strict_safeseh
+          - legacy_compat_audit
 
 jobs:
   build:
@@ -256,7 +261,9 @@ jobs:
       - name: Configure diagnostic-only legacy Engine link
         shell: pwsh
         run: |
-          # SafeSEH validation: reject legacy objects that are incompatible with the mitigation. Do not publish binaries from this diagnostic workflow.
+          # SAFESEH strict is the default. Legacy mode exists only for diagnostic inventories, not release.
+          $linkMode = '${{ inputs.link_mode }}'
+          if ($linkMode -notin @('strict_safeseh','legacy_compat_audit')) { throw "Unsupported link mode: $linkMode" }
           $projPath = 'Engine/Engine_2010.vcxproj'
           [xml]$doc = Get-Content $projPath -Raw
           $ns = New-Object System.Xml.XmlNamespaceManager($doc.NameTable)
@@ -266,10 +273,20 @@ jobs:
           $link = $matches[0].SelectSingleNode('p:Link', $ns)
           if (-not $link) { throw 'Engine GERLIVE linker settings missing' }
           $se = $doc.CreateElement('ImageHasSafeExceptionHandlers', $doc.DocumentElement.NamespaceURI)
-          $se.InnerText = 'true'
+          if ($linkMode -eq 'strict_safeseh') { $se.InnerText = 'true' } else { $se.InnerText = 'false' }
           [void]$link.AppendChild($se)
           $oldOpts = [string]$link.AdditionalOptions
           $link.AdditionalOptions = "$oldOpts /NODEFAULTLIB:libpng.lib /NODEFAULTLIB:libpng16.lib /NODEFAULTLIB:libz.lib legacy_stdio_definitions.lib"
+          if ($linkMode -eq 'legacy_compat_audit') {
+            # ASLR and DEP are independent mitigations; we do not claim they replace SafeSEH.
+            $aslr = $link.SelectSingleNode('p:RandomizedBaseAddress', $ns)
+            if (-not $aslr) {
+              $aslr = $doc.CreateElement('RandomizedBaseAddress', $doc.DocumentElement.NamespaceURI)
+              [void]$link.AppendChild($aslr)
+            }
+            $aslr.InnerText = 'true'
+            $link.AdditionalOptions = [string]$link.AdditionalOptions + ' /DYNAMICBASE /NXCOMPAT'
+          }
           # The per-file ForcedIncludeFiles setting did not affect Texture.obj in run 22.
           # Patch the runner's checkout, never commit generated prefix definitions.
           $texturePath = 'Engine/Graphics/Texture.cpp'
@@ -282,7 +299,7 @@ jobs:
           [System.IO.File]::WriteAllText((Resolve-Path $texturePath).Path,$textureText)
           Write-Host 'Injected PNG symbol remapping into Texture.cpp after stdh.h/PCH'
           $doc.Save((Resolve-Path $projPath).Path)
-          Write-Host 'Validating Engine link with SAFESEH enabled; no binaries will be published'
+          Write-Host "Win32 diagnostic link mode: $linkMode. No binaries will be published."
       - name: Attempt Win32 compilation and save diagnostic log
         if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
         id: compile
@@ -297,19 +314,15 @@ jobs:
             Select-String -Path "build-win32.log" -Pattern 'error (C[0-9]+|LNK[0-9]+|MSB[0-9]+)|error :|fatal error|memory exhausted' | Select-Object -First 25 | ForEach-Object { Write-Host $_.Line }
             exit $LASTEXITCODE
           }
-      - name: Verify generated Win32 components and record hashes (no executables uploaded)
+      - name: Inspect PE hardening, DLL dependencies and build outputs (no binaries uploaded)
         if: steps.compile.outcome == 'success'
         shell: pwsh
         run: |
-          $required = @('Engine.dll','EntitiesMP.dll','GameMP.dll','Shaders.dll','Nksp.exe')
-          $binDir = 'D:\Bin'
-          foreach ($file in $required) {
-            $path = Join-Path $binDir $file
-            if (-not (Test-Path $path)) { throw "Missing built component: $path" }
-            $hash = Get-FileHash $path -Algorithm SHA256
-            Write-Host "$file : $($hash.Hash)"
-          }
-          Write-Host 'All expected core components exist. This is not a runtime or full dependency verification.'
+          $vsTools = Join-Path "${{ steps.vs.outputs.path }}" "VC\Tools\MSVC"
+          $dumpbin = Get-ChildItem -Path $vsTools -Filter dumpbin.exe -File -Recurse | Where-Object { $_.FullName -match 'Hostx64\\x86' } | Select-Object -First 1
+          if (-not $dumpbin) { throw 'dumpbin.exe x86 tool not found' }
+          & .\.github\scripts\audit-win32-client.ps1 -BinDir 'D:\Bin' -ReportPath 'win32-client-audit.txt' -DumpbinExe $dumpbin.FullName
+          if (-not (Test-Path 'win32-client-audit.txt')) { throw 'PE diagnostic report missing' }
       - name: Publish diagnostic logs only (no unverified binaries)
         if: always()
         uses: actions/upload-artifact@v4
@@ -323,3 +336,4 @@ jobs:
             lua-win32.log
             lc_png-win32.log
             lc_z-win32.log
+            win32-client-audit.txt
