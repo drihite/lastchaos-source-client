@@ -138,6 +138,9 @@ public:
 private:
 	struct CompareDonationItemData
 	{
+		typedef _DonationItemInfo first_argument_type;
+		typedef int second_argument_type;
+		typedef bool result_type;
 		bool operator() ( const _DonationItemInfo& data, const int index ) const
 		{
 			return ( data.index == index );
