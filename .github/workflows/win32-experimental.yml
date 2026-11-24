@@ -283,10 +283,10 @@ jobs:
           $env:CL = '/I"' + $env:DX8_INCLUDE + '"'
           $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib /DEFAULTLIB:lc_png.lib /DEFAULTLIB:lc_z.lib'
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
-          & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
+          & $msbuild "Build_2010.sln" /m:1 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Compilation failed; first compiler/linker errors:"
-            Select-String -Path "build-win32.log" -Pattern 'error (C[0-9]+|LNK[0-9]+)|fatal error' | Select-Object -First 25 | ForEach-Object { Write-Host $_.Line }
+            Select-String -Path "build-win32.log" -Pattern 'error (C[0-9]+|LNK[0-9]+|MSB[0-9]+)|error :|fatal error|memory exhausted' | Select-Object -First 25 | ForEach-Object { Write-Host $_.Line }
             exit $LASTEXITCODE
           }
       - name: Publish diagnostic logs only (no unverified binaries)
