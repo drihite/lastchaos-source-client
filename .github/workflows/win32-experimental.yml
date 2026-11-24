@@ -26,6 +26,14 @@ jobs:
             }
             Write-Host "X-Trap disabled in $path"
           }
+      - name: Verify migrated Boost.Asio network code
+        shell: pwsh
+        run: |
+          $paths = 'Engine/Network/NetClient.h','Engine/Network/NetClient.cpp','Engine/Contents/Login/UILoginNew.cpp'
+          if (Select-String -Path $paths -Pattern 'boost::asio::io_service|_socket.get_io_service\(' -Quiet) {
+            throw "Legacy Boost.Asio API remains in network client files"
+          }
+          Write-Host "Boost.Asio io_context migration detected"
       - name: Locate Visual Studio build tools
         id: vs
         shell: pwsh
