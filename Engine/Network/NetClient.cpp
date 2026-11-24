@@ -10,7 +10,7 @@
 
 #define		BUFF_SIZE		10240
 
-CNetSocket::CNetSocket(boost::asio::io_service& io)
+CNetSocket::CNetSocket(boost::asio::io_context& io)
 	: _bConnect(false)
 	, _socket(io)
 {
@@ -24,9 +24,9 @@ CNetSocket::~CNetSocket()
 
 bool CNetSocket::isValid()
 {
-	if (!_socket.is_open() && _bConnect)   // Ä¿³ØÆ® µÈ ÀÌÈÄ ¼ÒÄÏÀÌ ´İÇô¹ö·È´Ù¸é
+	if (!_socket.is_open() && _bConnect)   // ì»¤ë„¥íŠ¸ ëœ ì´í›„ ì†Œì¼“ì´ ë‹«í˜€ë²„ë ¸ë‹¤ë©´
 	{
-		_bConnect = false;					// Ä¿³ØÆ®µµ ²÷±è ÆÇÁ¤
+		_bConnect = false;					// ì»¤ë„¥íŠ¸ë„ ëŠê¹€ íŒì •
 		return false;
 	}
 
@@ -35,26 +35,19 @@ bool CNetSocket::isValid()
 
 bool CNetSocket::connect( std::string& IP, std::string& port )
 {
-	boost::asio::ip::tcp::resolver resolver(_socket.get_io_service());
-	boost::asio::ip::tcp::resolver::query query(IP, port);
-	boost::asio::ip::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
-	boost::asio::ip::tcp::resolver::iterator end;
-
-	// resolvingµÈ endpoint·Î Á¢¼ÓÀ» ½ÃµµÇÑ´Ù.
-	boost::system::error_code error = boost::asio::error::host_not_found;
-	while (error && endpoint_iterator != end)
+	boost::asio::ip::tcp::resolver resolver(_socket.get_executor());
+	boost::system::error_code error;
+	boost::asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(IP, port, error);
+	if (!error)
 	{
-		_socket.close();
-		_socket.connect(*endpoint_iterator++, error);
+		boost::asio::connect(_socket, endpoints, error);
 	}
 
-	// Á¢¼Ó ½ÇÆĞÀÎÁö È®ÀÎ
 	if (error)
 	{
 		_bConnect = false;
 		return false;
 	}
-
 	_bConnect = true;
 
 	return true;
@@ -86,11 +79,11 @@ void CNetSocket::recv()
 
 	while(true)
 	{
-		// ÀĞ¾î¿Ã µ¥ÀÌÅÍ¸¦ ÀúÀåÇÒ array¸¦ ¸¸µç´Ù.
+		// ì½ì–´ì˜¬ ë°ì´í„°ë¥¼ ì €ì¥í•  arrayë¥¼ ë§Œë“ ë‹¤.
 		boost::array<char, BUFF_SIZE> buf;
 		boost::system::error_code error;
-		// read_someÇÔ¼ö¸¦ È£ÃâÇØ 128¸¸Å­ÀÇ ¹öÆÛ¿¡ Ã¤¿ö´Ş¶ó°í ¿äÃ»ÇÑ´Ù.
-		// ( len <=128 ÀÏ°ÍÀÌ´Ù. )
+		// read_someí•¨ìˆ˜ë¥¼ í˜¸ì¶œí•´ 128ë§Œí¼ì˜ ë²„í¼ì— ì±„ì›Œë‹¬ë¼ê³  ìš”ì²­í•œë‹¤.
+		// ( len <=128 ì¼ê²ƒì´ë‹¤. )
 		size_t len = _socket.read_some(boost::asio::buffer(buf), error);
 
 		break;
