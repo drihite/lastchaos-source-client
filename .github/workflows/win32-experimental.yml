@@ -203,9 +203,8 @@ jobs:
           if (-not $engineInc) { throw "Engine compiler settings missing" }
           $oldDefs = [string]$engineInc.PreprocessorDefinitions
           $engineInc.PreprocessorDefinitions = "PNG_USE_DLL;$oldDefs"
-          # Build a DATA-only import library: the client calls through the
-          # DLL IAT (__imp__png_*), without adding function thunks (_png_*)
-          # that conflict with old symbols bundled inside d3dx8.lib.
+          # Import PNG via IAT-only DATA entries to avoid function thunks
+          # conflicting with the PNG symbols built into d3dx8.lib.
           $toolsPath = Join-Path "${{ steps.vs.outputs.path }}" 'VC/Tools/MSVC'
           $dumpbin = Get-ChildItem $toolsPath -Recurse -Filter dumpbin.exe | Where-Object { $_.FullName -match 'Hostx64.*x86' } | Select-Object -First 1
           $libtool = Get-ChildItem $toolsPath -Recurse -Filter lib.exe | Where-Object { $_.FullName -match 'Hostx64.*x86' } | Select-Object -First 1
@@ -227,31 +226,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Failed to generate data-only PNG DLL import library' }
           $symbols = & $dumpbin.FullName /nologo /linkermember:1 (Join-Path $env:DX8_LIB 'clientpng.lib')
           if ($LASTEXITCODE -ne 0) { throw 'Could not inspect generated PNG import library' }
-          if (($symbols -join "`n") -match '(?m)^\s*_png_sig_cmp\s*
-          $doc.Save((Resolve-Path $projPath).Path)
-          Write-Host 'Diagnostic-only link: SAFESEH:NO, no legacy libpng duplicate, legacy stdio definitions'
-      - name: Attempt Win32 compilation and save diagnostic log
-        if: steps.ecc.outcome == 'success' && steps.boost.outcome == 'success'
-        id: compile
-        shell: pwsh
-        run: |
-          $env:CL = '/I"' + $env:DX8_INCLUDE + '"'
-          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib /DEFAULTLIB:clientpng.lib'
-          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
-          & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
-          if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
-      - name: Publish diagnostic logs only (no unverified binaries)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: win32-build-diagnostics
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            build-win32.log
-            ecc-win32.log
-            lua-win32.log
-) { throw 'Generated PNG import lib still contains conflicting function thunk' }
+          if (($symbols -join "`n") -match '(?m)^\s*_png_sig_cmp\s*$') { throw 'PNG import lib still defines conflicting function thunk' }
           "PNG_CLIENT_DLL=$($pngDlls[0].FullName)" >> $env:GITHUB_ENV
           Write-Host "Generated DATA-only PNG import library for $($names.Count) exports"
           $doc.Save((Resolve-Path $projPath).Path)
