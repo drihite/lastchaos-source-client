@@ -258,13 +258,17 @@ jobs:
           [void]$link.AppendChild($se)
           $oldOpts = [string]$link.AdditionalOptions
           $link.AdditionalOptions = "$oldOpts /NODEFAULTLIB:libpng.lib /NODEFAULTLIB:libpng16.lib /NODEFAULTLIB:libz.lib legacy_stdio_definitions.lib"
-          # Apply renames only to Texture.cpp; other Engine code keeps original zlib ABI.
-          $texture = $doc.SelectSingleNode('//p:ClCompile[@Include="Graphics\Texture.cpp"]',$ns)
-          if (-not $texture) { throw 'Texture.cpp MSBuild entry not found' }
-          if (-not (Test-Path $env:LC_PNG_PREFIX)) { throw 'Isolated PNG header missing' }
-          $force = $doc.CreateElement('ForcedIncludeFiles',$doc.DocumentElement.NamespaceURI)
-          $force.InnerText = "$env:LC_PNG_PREFIX;%(ForcedIncludeFiles)"
-          [void]$texture.AppendChild($force)
+          # The per-file ForcedIncludeFiles setting did not affect Texture.obj in run 22.
+          # Patch the runner's checkout, never commit generated prefix definitions.
+          $texturePath = 'Engine/Graphics/Texture.cpp'
+          $textureText = [System.IO.File]::ReadAllText((Resolve-Path $texturePath).Path)
+          $oldInclude = '#include <3rdparty/lpng163/png.h>'
+          if (-not $textureText.Contains($oldInclude)) { throw 'Texture.cpp PNG include not found' }
+          if (-not (Test-Path $env:LC_PNG_PREFIX)) { throw 'Isolated PNG prefix header missing' }
+          $newInclude = '#include "' + ($env:LC_PNG_PREFIX -replace '\\','/') + '"' + "`n" + $oldInclude
+          $textureText = $textureText.Replace($oldInclude, $newInclude)
+          [System.IO.File]::WriteAllText((Resolve-Path $texturePath).Path,$textureText)
+          Write-Host 'Injected PNG symbol remapping into Texture.cpp after stdh.h/PCH'
           $doc.Save((Resolve-Path $projPath).Path)
           Write-Host 'Diagnostic Engine link: isolated PNG/zlib, legacy stdio; SAFESEH disabled for testing only'
       - name: Attempt Win32 compilation and save diagnostic log
