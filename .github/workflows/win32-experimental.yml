@@ -113,7 +113,7 @@ jobs:
           if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
           $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
           if (-not (Test-Path $vcpkg)) { throw "vcpkg.exe not found at $vcpkg" }
-          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows boost-asio:x86-windows
+          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows boost-asio:x86-windows libpng:x86-windows
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $vcpkg integrate install
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -123,6 +123,57 @@ jobs:
           if (-not (Test-Path (Join-Path $vcpkgRoot "installed\x86-windows\include\boost\thread.hpp"))) {
             throw "Boost thread header missing after installation"
           }
+
+      - name: Rebuild bundled Lua 5.1 sources with matching Win32 CRT
+        shell: pwsh
+        run: |
+          $sources = Get-ChildItem -Path "Engine/lua" -Filter "*.c" -File | Where-Object { $_.Name -ne 'print.c' } | Sort-Object Name
+          if ($sources.Count -lt 20) { throw "Incomplete Lua 5.1 source list" }
+          $entries = ($sources | ForEach-Object { '    <ClCompile Include="' + [System.Security.SecurityElement]::Escape($_.FullName) + '" />' }) -join "`n"
+          $projectText = @'
+          <Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+            <ItemGroup Label="ProjectConfigurations">
+              <ProjectConfiguration Include="Release|Win32"><Configuration>Release</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+            </ItemGroup>
+            <PropertyGroup Label="Globals">
+              <ProjectGuid>{B9DC4C9A-3184-439E-8238-F99DCC2A4AAC}</ProjectGuid>
+              <Keyword>Win32Proj</Keyword>
+              <RootNamespace>LastChaosLua51</RootNamespace>
+            </PropertyGroup>
+            <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+            <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+              <ConfigurationType>StaticLibrary</ConfigurationType>
+              <PlatformToolset>v143</PlatformToolset>
+              <CharacterSet>MultiByte</CharacterSet>
+            </PropertyGroup>
+            <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+            <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+              <OutDir>$(ProjectDir)lua-out\</OutDir>
+              <IntDir>$(ProjectDir)lua-int\</IntDir>
+              <TargetName>lua5.1</TargetName>
+            </PropertyGroup>
+            <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+              <ClCompile>
+                <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+                <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+                <WarningLevel>Level3</WarningLevel>
+              </ClCompile>
+            </ItemDefinitionGroup>
+            <ItemGroup>
+          __LUA_FILES__
+            </ItemGroup>
+            <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+          </Project>
+          '@
+          $projectPath = Join-Path $env:RUNNER_TEMP 'lua5.1-v143.vcxproj'
+          [System.IO.File]::WriteAllText($projectPath, $projectText.Replace('__LUA_FILES__', $entries))
+          $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
+          & $msbuild $projectPath /m:1 /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /v:minimal "/flp:logfile=lua-win32.log;verbosity=diagnostic"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $built = Join-Path $env:RUNNER_TEMP 'lua-out\lua5.1.lib'
+          if (-not (Test-Path $built)) { throw 'Lua 5.1 static library missing after rebuild' }
+          Copy-Item $built 'Engine/lua/lua5.1.lib' -Force
+          Write-Host "Rebuilt original Lua 5.1 as x86 /MD for diagnostic client build"
       - name: Configure diagnostic-only legacy Engine link
         shell: pwsh
         run: |
@@ -140,6 +191,21 @@ jobs:
           [void]$link.AppendChild($se)
           $oldOpts = [string]$link.AdditionalOptions
           $link.AdditionalOptions = "$oldOpts /NODEFAULTLIB:libpng.lib legacy_stdio_definitions.lib"
+          # Load libpng 1.6 from a separate DLL rather than mixing its symbols
+          # with the older libpng objects statically embedded in d3dx8.lib.
+          $pngRoot = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed\x86-windows'
+          if (-not (Test-Path $pngRoot)) { $pngRoot = 'C:\vcpkg\installed\x86-windows' }
+          $pngLibs = @(Get-ChildItem -Path (Join-Path $pngRoot 'lib') -Filter '*png*.lib' -File)
+          if ($pngLibs.Count -ne 1) { throw "Expected one libpng import library; got $($pngLibs.Count)" }
+          $pngDlls = @(Get-ChildItem -Path (Join-Path $pngRoot 'bin') -Filter '*png*.dll' -File)
+          if ($pngDlls.Count -ne 1) { throw "Expected one libpng runtime DLL; got $($pngDlls.Count)" }
+          $engineInc = $matches[0].SelectSingleNode('p:ClCompile', $ns)
+          if (-not $engineInc) { throw "Engine compiler settings missing" }
+          $oldDefs = [string]$engineInc.PreprocessorDefinitions
+          $engineInc.PreprocessorDefinitions = "PNG_USE_DLL;$oldDefs"
+          Copy-Item $pngLibs[0].FullName (Join-Path $env:DX8_LIB 'clientpng.lib') -Force
+          "PNG_CLIENT_DLL=$($pngDlls[0].FullName)" >> $env:GITHUB_ENV
+          Write-Host "Client PNG DLL import: $($pngLibs[0].Name); runtime $($pngDlls[0].Name)"
           $doc.Save((Resolve-Path $projPath).Path)
           Write-Host 'Diagnostic-only link: SAFESEH:NO, no legacy libpng duplicate, legacy stdio definitions'
       - name: Attempt Win32 compilation and save diagnostic log
@@ -148,7 +214,7 @@ jobs:
         shell: pwsh
         run: |
           $env:CL = '/I"' + $env:DX8_INCLUDE + '"'
-          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib'
+          $env:LINK = '/LIBPATH:"' + $env:DX8_LIB + '" /DEFAULTLIB:d3d8.lib /DEFAULTLIB:d3dx8.lib /DEFAULTLIB:clientpng.lib'
           $msbuild = Join-Path "${{ steps.vs.outputs.path }}" "MSBuild\Current\Bin\MSBuild.exe"
           & $msbuild "Build_2010.sln" /m:2 /t:Build /p:Configuration=GERLIVE /p:Platform=Win32 /p:PlatformToolset=v143 /p:UseMultiToolTask=true /v:minimal "/flp:logfile=build-win32.log;verbosity=diagnostic"
           if ($LASTEXITCODE -ne 0) { Write-Host "Compilation failed: inspect build-win32.log"; exit $LASTEXITCODE }
@@ -162,3 +228,4 @@ jobs:
           path: |
             build-win32.log
             ecc-win32.log
+            lua-win32.log
