@@ -140,6 +140,7 @@ copy Debug\%(Filename).map $(ENGINE_DIR)\Bin\Debug &gt;nul </Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OutputFile>.\Release\Ecc.exe</OutputFile>
+      <LargeAddressAware>true</LargeAddressAware>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
