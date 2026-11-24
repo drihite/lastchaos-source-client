@@ -26,6 +26,14 @@ jobs:
             }
             Write-Host "X-Trap disabled in $path"
           }
+      - name: Verify GameMP compiler fix before expensive tool setup
+        shell: pwsh
+        run: |
+          $consoleText = [System.IO.File]::ReadAllText((Resolve-Path 'GameMP/Console.cpp').Path)
+          if (-not $consoleText.Contains('strEditingLine.RemovePrefix("/" CHEAT_PREFIX);')) {
+            throw 'Expected fixed GameMP/Console.cpp slash-prefix expression is missing from checkout'
+          }
+          Write-Host 'GameMP/Console.cpp prefix fix is present in xtrap-free-win32'
       - name: Verify migrated Boost.Asio network code
         shell: pwsh
         run: |
