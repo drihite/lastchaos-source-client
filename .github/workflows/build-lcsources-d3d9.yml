@@ -1,0 +1,87 @@
+name: Build external LCSources-D3D9 LC2015 client
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/build-lcsources-d3d9.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-client:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - name: Checkout public D3D9 source
+        uses: actions/checkout@v4
+        with:
+          repository: tx00100xt/LCSources-D3D9
+          ref: main
+          path: d3d9
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Locate compiler
+        id: compiler
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          if (-not $vs) { throw 'No Visual Studio MSBuild installation' }
+          "msbuild=$vs\MSBuild\Current\Bin\MSBuild.exe" >> $env:GITHUB_OUTPUT
+          Write-Host "Using $vs"
+      - name: Configure Win32 Boost dependencies
+        shell: pwsh
+        run: |
+          $root = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $root) { $root='C:\vcpkg' }
+          $vcpkg = Join-Path $root 'vcpkg.exe'
+          if (-not (Test-Path $vcpkg)) { throw "Missing vcpkg: $vcpkg" }
+          & $vcpkg install boost-thread:x86-windows boost-format:x86-windows boost-multi-index:x86-windows boost-bind:x86-windows boost-function:x86-windows boost-smart-ptr:x86-windows boost-asio:x86-windows boost-system:x86-windows
+          if ($LASTEXITCODE -ne 0) { throw 'Could not install Boost dependencies' }
+          & $vcpkg integrate install
+          if ($LASTEXITCODE -ne 0) { throw 'Could not integrate vcpkg' }
+          "BOOST_ROOT=$(Join-Path $root 'installed\x86-windows')" >> $env:GITHUB_ENV
+      - name: Compile LCRelease Win32 client (experimental)
+        id: compile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $solution = 'd3d9\VSProjects\LC2015\Client\Sources.VS2019.DX9\LCClient.sln'
+          if (-not (Test-Path $solution)) { throw "Missing upstream solution: $solution" }
+          & "${{ steps.compiler.outputs.msbuild }}" $solution /m:2 /t:Build /p:Configuration=LCRelease /p:Platform=Win32 /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /v:minimal "/flp:logfile=d3d9-build.log;verbosity=diagnostic"
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -ne 0) {
+            Write-Host 'Compilation error excerpts:'
+            Select-String -Path d3d9-build.log -Pattern 'error C[0-9]+|error LNK[0-9]+|error MSB[0-9]+|fatal error|error :' | Select-Object -First 30 | ForEach-Object { Write-Host $_.Line }
+            exit $exitCode
+          }
+      - name: Inventory compiled files
+        if: steps.compile.outcome == 'success'
+        shell: pwsh
+        run: |
+          $base = 'd3d9\VSProjects\LC2015\Client'
+          $bins = @(Get-ChildItem $base -Include Nksp.exe,Engine.dll,GameMP.dll,EntitiesMP.dll,Shaders.dll -Recurse -File)
+          $bins | ForEach-Object { "$($_.FullName) $($_.Length)" } | Set-Content d3d9-output-inventory.txt
+          if (-not ($bins | Where-Object Name -eq 'Nksp.exe')) { throw 'No Nksp.exe was generated' }
+          Write-Host 'Compiled Nksp.exe is present; runtime compatibility is unverified.'
+      - name: Save build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d3d9-build-log
+          path: |
+            d3d9-build.log
+            d3d9-output-inventory.txt
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Save executables for isolated testing
+        if: steps.compile.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: d3d9-lc2015-unverified-build
+          path: |
+            d3d9/VSProjects/LC2015/Client/**/Release/*.exe
+            d3d9/VSProjects/LC2015/Client/**/Release/*.dll
+          if-no-files-found: warn
+          retention-days: 3
