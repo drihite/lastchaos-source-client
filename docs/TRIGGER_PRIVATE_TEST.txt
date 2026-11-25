@@ -3,3 +3,5 @@ This file is the sole push trigger for the Win32 workflow. No game data or exter
 2026-11-24
 
 2026-11-24: rebuild requested after Windows reported missing boost_thread-vc143-mt-x32-1_92.dll.
+
+2026-11-25: standalone Nksp GERLIVE startup test without the legacy launcher IPC handshake; X-Trap definitions remain disabled. User reports 'This program could not be run itself'.
