@@ -105,6 +105,21 @@ jobs:
           & $vcpkg integrate install
           if ($LASTEXITCODE -ne 0) { throw 'Could not integrate vcpkg' }
           "BOOST_ROOT=$(Join-Path $root 'installed\x86-windows')" >> $env:GITHUB_ENV
+      - name: Provision D3DX9 Win32 import library
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '9.29.952.8'
+          $package = 'microsoft.dxsdk.d3dx'
+          $url = "https://api.nuget.org/v3-flatcontainer/$package/$version/$package.$version.nupkg"
+          $zip = Join-Path $env:RUNNER_TEMP 'd3dx.zip'
+          $root = Join-Path $env:RUNNER_TEMP 'd3dx-package'
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $root -Force
+          $lib = Join-Path $root 'build/native/release/lib/x86'
+          if (-not (Test-Path (Join-Path $lib 'd3dx9.lib'))) { throw "Missing Win32 d3dx9.lib in $lib" }
+          "LIB=$lib;$env:LIB" >> $env:GITHUB_ENV
+          Write-Host "Provided legacy DirectX 9 library: $lib"
       - name: Compile LCRelease Win32 client (experimental)
         id: compile
         shell: pwsh
