@@ -22,6 +22,14 @@ jobs:
           path: d3d9
           persist-credentials: false
           fetch-depth: 1
+      - name: Checkout established legacy Ecc tool sources
+        uses: actions/checkout@v4
+        with:
+          repository: drihite/lastchaos-source-client
+          ref: xtrap-free-win32
+          path: legacy-ecc
+          persist-credentials: false
+          fetch-depth: 1
       - name: Locate compiler
         id: compiler
         shell: pwsh
@@ -30,6 +38,28 @@ jobs:
           if (-not $vs) { throw 'No Visual Studio MSBuild installation' }
           "msbuild=$vs\MSBuild\Current\Bin\MSBuild.exe" >> $env:GITHUB_OUTPUT
           Write-Host "Using $vs"
+      - name: Install Ecc parser prerequisites
+        shell: pwsh
+        run: |
+          choco install winflexbison3 -y --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'winflexbison3 setup failed' }
+          $directory = Join-Path $env:ChocolateyInstall 'lib\winflexbison3\tools'
+          foreach ($name in @('win_bison.exe','win_flex.exe')) {
+            if (-not (Test-Path (Join-Path $directory $name))) { throw "Missing $name in $directory" }
+          }
+          Copy-Item (Join-Path $directory 'win_bison.exe') (Join-Path $directory 'bison.exe') -Force
+          Copy-Item (Join-Path $directory 'win_flex.exe') (Join-Path $directory 'flex.exe') -Force
+          $directory >> $env:GITHUB_PATH
+      - name: Build and register legacy Ecc compiler
+        shell: pwsh
+        run: |
+          $msbuild = "${{ steps.compiler.outputs.msbuild }}"
+          & $msbuild 'legacy-ecc\Ecc\Ecc_2010.vcxproj' /m:1 /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /v:minimal "/flp:logfile=d3d9-ecc.log;verbosity=diagnostic"
+          if ($LASTEXITCODE -ne 0) { throw 'Ecc tool compilation failed' }
+          $ecc = (Resolve-Path 'legacy-ecc\Ecc\Release\Ecc.exe' -ErrorAction Stop).Path
+          $eccDir = Split-Path $ecc -Parent
+          $eccDir >> $env:GITHUB_PATH
+          Write-Host "Ecc compiler added to PATH: $ecc"
       - name: Configure Win32 Boost dependencies
         shell: pwsh
         run: |
@@ -72,6 +102,7 @@ jobs:
           name: d3d9-build-log
           path: |
             d3d9-build.log
+            d3d9-ecc.log
             d3d9-output-inventory.txt
           if-no-files-found: warn
           retention-days: 7
