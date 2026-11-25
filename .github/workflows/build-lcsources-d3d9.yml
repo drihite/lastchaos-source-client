@@ -79,15 +79,15 @@ jobs:
               $brace = $source.IndexOf('{', $end)
               $close = $source.IndexOf('}', $brace)
               if ($brace -lt 0 -or $close -lt 0) { throw 'Unable to locate old resolver/connection loop' }
-              $replacement = @'
-              boost::asio::ip::tcp::resolver resolver(_socket.get_executor());
-              boost::system::error_code error;
-              auto endpoints = resolver.resolve(IP, port, error);
-              if (!error) {
-                  _socket.close();
-                  boost::asio::connect(_socket, endpoints, error);
-              }
-'@
+              $replacement = (@(
+                'boost::asio::ip::tcp::resolver resolver(_socket.get_executor());',
+                'boost::system::error_code error;',
+                'auto endpoints = resolver.resolve(IP, port, error);',
+                'if (!error) {',
+                '    _socket.close();',
+                '    boost::asio::connect(_socket, endpoints, error);',
+                '}'
+              ) -join [Environment]::NewLine) + [Environment]::NewLine
               $source = $source.Substring(0, $start) + $replacement + $source.Substring($close + 1)
             }
             [System.IO.File]::WriteAllText($path, $source)
