@@ -405,7 +405,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>..\;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>G_GERMAN;_CLIENT_;_USE_32BIT_TIME_T;WIN32;NDEBUG;_WINDOWS;_WINDLL;_AFXDLL;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>G_GERMAN;LC_STANDALONE_CLIENT_TEST;_CLIENT_;_USE_32BIT_TIME_T;WIN32;NDEBUG;_WINDOWS;_WINDLL;_AFXDLL;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BrowseInformation>true</BrowseInformation>
       <PrecompiledHeaderOutputFile>$(IntDir)Nksp.pch</PrecompiledHeaderOutputFile>
