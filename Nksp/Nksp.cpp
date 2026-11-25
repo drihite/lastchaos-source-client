@@ -69,7 +69,7 @@ extern ENGINE_API char *g_szExitError;
 
 #endif
 
-//2013/04/15 jeil ·±Ã³¿¡ ÇØ»óµµ º¯°æ Ãß°¡
+//2013/04/15 jeil ëŸ°ì²˜ì— í•´ìƒë„ ë³€ê²½ ì¶”ê°€
 #include <fstream>
 
 using namespace std;
@@ -91,7 +91,7 @@ extern CGame		*_pGame = NULL;
 //extern BOOL _bMenuActive = FALSE;
 //extern BOOL _bMenuRendering = FALSE;
 
-// Debug¸ğµåÀÏ¶§ ¶óÀÌºê ·¯¸® ¹Ù²ã ÁÖ±â SharedMemoryDll [7/31/2012 Ranma]
+// Debugëª¨ë“œì¼ë•Œ ë¼ì´ë¸Œ ëŸ¬ë¦¬ ë°”ê¿” ì£¼ê¸° SharedMemoryDll [7/31/2012 Ranma]
 
 #if		defined(_MSC_VER) && (_MSC_VER >= 1600)
 #	ifdef _DEBUG
@@ -148,7 +148,7 @@ extern void FindMaxResolution( PIX &pixSizeI, PIX &pixSizeJ)
 	pixSizeJ = _apixRes[0][1];
 }
 
-//extern BOOL _bDefiningKey;		// ¿øº».
+//extern BOOL _bDefiningKey;		// ì›ë³¸.
 extern BOOL _bDefiningKey = FALSE;
 //static BOOL _bReconsiderInput = FALSE;
 extern PIX  _pixDesktopWidth  = 0;
@@ -262,7 +262,7 @@ extern ENGINE_API HINSTANCE	_hInstanceMain;
 /*
 static void PlayDemo(const CTString &strDemoFilename)
 {
-	// ¾²ÀÌÁö ¾ÊÀ½.
+	// ì“°ì´ì§€ ì•ŠìŒ.
 	_gmMenuGameMode = GM_DEMO;
 	CTFileName fnDemo = "demos\\" + strDemoFilename + ".dem";
 	extern BOOL LSLoadDemo(const CTFileName &fnm);
@@ -348,13 +348,13 @@ void GetNM(LPSTR lpCmdLine)
 				break;
 			case USA:
 				break;
-			case BRAZIL:	// [2012/07/19 : Sora]  ºô¶ó ÀÚµ¿ ·Î±×ÀÎ Ãß°¡
+			case BRAZIL:	// [2012/07/19 : Sora]  ë¹Œë¼ ìë™ ë¡œê·¸ì¸ ì¶”ê°€
 				//g_bAutoLogin = TRUE;
 				break;
 			case HONGKONG:
 				g_bAutoLogin = TRUE;
 				break;
-			case MEXICO:	// [2012/07/19 : Sora]  ºô¶ó ÀÚµ¿ ·Î±×ÀÎ Ãß°¡
+			case MEXICO:	// [2012/07/19 : Sora]  ë¹Œë¼ ìë™ ë¡œê·¸ì¸ ì¶”ê°€
 				//g_bAutoLogin = TRUE;
 				break;
 			}
@@ -363,21 +363,21 @@ void GetNM(LPSTR lpCmdLine)
 
 /***********************************************************************************************
 * IsRunning()
-* Áßº¹ ½ÇÇà ¹æÁö ÇÔ¼ö
-* ÇöÀç ½ÇÇà ÁßÀÎ ÇÁ·Î¼¼½º¸¦ °Ë»öÇÏ¿© Nksp.exe°¡ ½ÇÇàµÇ¾î ÀÖ´Â °ÍÀÌ ÀÖ´ÂÁö È®ÀÎÇÏ¿© TRUE, FALSE¸¦
-* ¸®ÅÏ ÇÑ´Ù.
+* ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€ í•¨ìˆ˜
+* í˜„ì¬ ì‹¤í–‰ ì¤‘ì¸ í”„ë¡œì„¸ìŠ¤ë¥¼ ê²€ìƒ‰í•˜ì—¬ Nksp.exeê°€ ì‹¤í–‰ë˜ì–´ ìˆëŠ” ê²ƒì´ ìˆëŠ”ì§€ í™•ì¸í•˜ì—¬ TRUE, FALSEë¥¼
+* ë¦¬í„´ í•œë‹¤.
 *************************************************************************************************/
 BOOL IsRunning(void)
 {
 	PROCESSENTRY32 peNext;
 
-	// Á¢±Ù ÇÁ·Î¼¼½º ÇÚµéÀ» »ı¼ºÇÑ´Ù.
+	// ì ‘ê·¼ í”„ë¡œì„¸ìŠ¤ í•¸ë“¤ì„ ìƒì„±í•œë‹¤.
 	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
 	if (hSnapShot == INVALID_HANDLE_VALUE )
 	{
 #if defined G_RUSSIA
-		MessageBox(NULL, "Îøèáêà çàïóñê ïğîãğàìì LastChaos!", "LastChaos Run", MB_OK);
+		MessageBox(NULL, "ä¸˜çŸ®é­ è£”è‰‡ä»² ç©½è¬«èª¿å£¹ LastChaos!", "LastChaos Run", MB_OK);
 #else
 		MessageBox(NULL, "Fail Execute LastChaos!", "LastChaos Run", MB_OK);
 #endif
@@ -391,9 +391,9 @@ BOOL IsRunning(void)
 	DWORD dwTemp = GetCurrentProcessId();
 	BOOL bCurrentProcess = FALSE;
 
-	Process32First(hSnapShot, &peNext); // Ã¹¹øÂ° ÇÁ·Î¼¼½º¸¦ °¡Á®¿Â´Ù.
+	Process32First(hSnapShot, &peNext); // ì²«ë²ˆì§¸ í”„ë¡œì„¸ìŠ¤ë¥¼ ê°€ì ¸ì˜¨ë‹¤.
 
-	while(Process32Next(hSnapShot, &peNext)) // ¸ğµç ÇÁ·Î¼¼½º¸¦ °Ë»öÇÑ´Ù.
+	while(Process32Next(hSnapShot, &peNext)) // ëª¨ë“  í”„ë¡œì„¸ìŠ¤ë¥¼ ê²€ìƒ‰í•œë‹¤.
 	{
 		if (peNext.th32ProcessID == dwTemp)
 		{
@@ -423,7 +423,7 @@ BOOL IsRunning(void)
 	if (!bCurrentProcess)
 	{
 #if defined G_RUSSIA
-		MessageBox(NULL, "Îøèáêà çàïóñê ïğîãğàìì LastChaos!", "LastChaos Run", MB_OK);	
+		MessageBox(NULL, "ä¸˜çŸ®é­ è£”è‰‡ä»² ç©½è¬«èª¿å£¹ LastChaos!", "LastChaos Run", MB_OK);	
 #else
 		MessageBox(NULL, "Fail Execute LastChaos!", "LastChaos Run", MB_OK);
 #endif
@@ -490,8 +490,8 @@ static void DirectoryLockOff(void)
 	}
 }
 
-//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷	09.09
-// NOTE : ¾Ö´Ï¸ŞÀÌ¼Ç Ä¿¼­¸¦ ¸®¼Ò½º·ÎºÎÅÍ ÀĞ¾î¿È.
+//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…	09.09
+// NOTE : ì• ë‹ˆë©”ì´ì…˜ ì»¤ì„œë¥¼ ë¦¬ì†ŒìŠ¤ë¡œë¶€í„° ì½ì–´ì˜´.
 static HCURSOR LoadAnimationCursor(HINSTANCE hInstance, UINT nID)
 {
 	HRSRC hRes		= FindResource(hInstance, MAKEINTRESOURCE(nID), "CURSORS");
@@ -500,7 +500,7 @@ static HCURSOR LoadAnimationCursor(HINSTANCE hInstance, UINT nID)
 	LPBYTE pBytes	= (LPBYTE)LockResource(hGlob);
 	return (HCURSOR)CreateIconFromResource(pBytes, dwSize, FALSE, 0x00030000);	
 }
-//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷		09.09
+//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…		09.09
 
 void End(void);
 
@@ -535,7 +535,7 @@ void End(void);
 // automaticaly manage pause toggling
 void UpdatePauseState(void)
 {
-	// ¾²ÀÌÁö ¾Ê´Â ºÎºĞ.
+	// ì“°ì´ì§€ ì•ŠëŠ” ë¶€ë¶„.
 	/*
 	BOOL bShouldPause = ( _gmRunningGameMode == GM_SINGLE_PLAYER ) &&
 						( _pGameState->m_bMenuActive || _pGame->gm_csConsoleState == CS_ON ||
@@ -611,9 +611,9 @@ void LoadAndForceTexture(CTextureObject &to, CTextureObject *&pto, const CTFileN
 	}
 }
 
-//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-14)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-14)
 HMODULE g_hGame = NULL;
-//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-14)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-14)
 void InitializeGame(void)
 {
 	try {
@@ -631,7 +631,7 @@ void InitializeGame(void)
 		ExpandFilePath(EFP_READ, CTString(GAMEDLL), fnmExpanded);
 
 		CPrintF(TRANS("Loading game library '%s'...\n"), (const char *)fnmExpanded);
-//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-14)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-14)
 		g_hGame = LoadLibrary(fnmExpanded);
 		if (g_hGame==NULL) 
 		{
@@ -642,7 +642,7 @@ void InitializeGame(void)
 		{
 			ThrowF_t("%s", GetWindowsError(GetLastError()));
 		}
-//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-14)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-14)
 		_pGame = GAME_Create();		
 	} 
 	catch (char *strError) 
@@ -650,7 +650,7 @@ void InitializeGame(void)
 		FatalError("%s", strError);
 	}
 	// init game - this will load persistent symbols
-	// ¼öÁ¤µÈ init [3/2/2011 rumist]
+	// ìˆ˜ì •ëœ init [3/2/2011 rumist]
 	_pGame->Initialize(CTString("Data\\nksp.gms"), FALSE);
 }
 
@@ -677,7 +677,7 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 	else
 	{
 		// WSS_NPROTECT 070405 ------------------>><<	
-		// È«ÄáÀÇ °æ¿ì nProtect·Î Áßº¹ °ËÃâ
+		// í™ì½©ì˜ ê²½ìš° nProtectë¡œ ì¤‘ë³µ ê²€ì¶œ
 //#ifdef NO_GAMEGUARD
 #ifndef MULTI_CLIENT
 		if(FindWindow(APPLICATION_NAME,NULL))
@@ -688,7 +688,7 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 		if (IsRunning())
 		{
 #if defined G_RUSSIA
-			MessageBox(NULL, "Êëèåíò LastChaos óæ?çàïóùå?", "LastChaos", MB_OK);
+			MessageBox(NULL, "å‹˜çŒ¥ç²§ LastChaos æ§?è£”è‰‡ç·˜?", "LastChaos", MB_OK);
 #else
 			MessageBox(NULL, "LastChaos is already running on your system", "LastChaos Run", MB_OK);
 #endif
@@ -840,7 +840,7 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 	g_pPlayer = _pEntityClassStock->Obtain_t(CTString("Classes\\Player.ecl"));  // this must not be a dependency!
 	g_pWorldBase = _pEntityClassStock->Obtain_t(CTString("Classes\\WorldBase.ecl"));  // this must not be a dependency!
 
-	//	±è¿µÈ¯ : Å¬¶óÀÌ¾ğÆ®¿ë ¿£ÁøDLL »ç¿ë
+	//	ê¹€ì˜í™˜ : í´ë¼ì´ì–¸íŠ¸ìš© ì—”ì§„DLL ì‚¬ìš©
 	_bClientApp = TRUE;
 	// if kalydo options.
 #ifdef KALYDO
@@ -885,7 +885,7 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 	pUIManager->SetGameHandle(_pGame);
 	pUIManager->ResetUIPos( _pdpMain );
 
-//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷	09.09
+//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…	09.09
 //#define ANIMATION_CURSOR
 #ifdef ANIMATION_CURSOR
 	pUIManager->GetMouseCursor()->SetCursorHandle( UMCT_NORMAL, LoadAnimationCursor( _hInstanceMain, IDC_NORMAL_CURSOR) );
@@ -900,7 +900,7 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 	pUIManager->GetMouseCursor()->SetCursorHandle( UMCT_ZOOMIN, LoadAnimationCursor( _hInstanceMain, IDC_ZOOMIN_CURSOR) );
 	pUIManager->GetMouseCursor()->SetCursorHandle( UMCT_SIGNAL, LoadAnimationCursor( _hInstanceMain, IDC_SIGNAL_CURSOR) );
 #else
-	// FIXME : EngineÀÇ Resource¿¡ *.cur È­ÀÏÀ» ³Ö¾îÁáÀ»¶§, ÇØ´ç Ä¿¼­¸¦ ¾ò¾î¿ÀÁö ¸øÇØ¼­ ÀÌ·±½ÄÀ¸·Î Ã³¸®ÇÔ.	
+	// FIXME : Engineì˜ Resourceì— *.cur í™”ì¼ì„ ë„£ì–´ì¤¬ì„ë•Œ, í•´ë‹¹ ì»¤ì„œë¥¼ ì–»ì–´ì˜¤ì§€ ëª»í•´ì„œ ì´ëŸ°ì‹ìœ¼ë¡œ ì²˜ë¦¬í•¨.	
 	pUIManager->GetMouseCursor()->SetCursorHandle( UMCT_NORMAL, LoadCursor( _hInstanceMain, MAKEINTRESOURCE(IDC_NORMAL_CURSOR) ) );
 	pUIManager->GetMouseCursor()->SetCursorHandle( UMCT_ATT_NORMAL, LoadCursor( _hInstanceMain, MAKEINTRESOURCE(IDC_ATTACK_CURSOR) ) );
 	pUIManager->GetMouseCursor()->SetCursorHandle( UMCT_ATT_SKILL, LoadCursor( _hInstanceMain, MAKEINTRESOURCE(IDC_SKILL_CURSOR) ) );
@@ -938,7 +938,7 @@ void DestroyNetworkClasses()
 
 void End(void)
 {
-	SaveWindowSizeToTxt();	// Á¾·á ÇÒ¶§ Å¬¶óÀÌ¾ğÆ® »çÀÌÁî ÀúÀå.
+	SaveWindowSizeToTxt();	// ì¢…ë£Œ í• ë•Œ í´ë¼ì´ì–¸íŠ¸ ì‚¬ì´ì¦ˆ ì €ì¥.
 	DestroyNetworkClasses();
 
 	ENTITY_STOCK_RELEASE(g_pPlayer);
@@ -965,9 +965,9 @@ void End(void)
 		ThrowF_t("%s", GetWindowsError(GetLastError()));
 	}
 	GAME_Destroy();
-//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-14)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-14)
 	if(g_hGame) FreeLibrary(g_hGame);
-//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-14)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-14)
 }
 
 
@@ -1019,7 +1019,7 @@ void PrintDisplayModeInfo(void)
 	_pdpMain->SetTextShadow( +2);
 	_pdpMain->SetTextAspect( 1.0f);
 	const FLOAT fPosMul = _pdpMain->IsTripleHead() ? 1.05f : 0.05f;
-	//pdp->PutText( strRes, slDPWidth*fPosMul, slDPHeight*0.85f, LCDGetColor(C_GREEN|255, "display mode"));		// ¿øº».
+	//pdp->PutText( strRes, slDPWidth*fPosMul, slDPHeight*0.85f, LCDGetColor(C_GREEN|255, "display mode"));		// ì›ë³¸.
 	_pdpMain->PutText( strRes, slDPWidth*fPosMul, slDPHeight*0.85f);
 }
 
@@ -1029,7 +1029,7 @@ void DoGame(void)
 	StageMgr* pStageMgr = StageMgr::getSingleton();
 	// set flag if not in game
 	if( !_pGame->gm_bGameOn){ 
-		//_gmRunningGameMode = GM_NONE;		// ¿øº».		
+		//_gmRunningGameMode = GM_NONE;		// ì›ë³¸.		
 		_pGameState->GetGameMode() = CGameState::GM_NONE;
 	}
 	else if(_pGameState->GetGameMode() == CGameState::GM_RESTART)
@@ -1044,7 +1044,7 @@ void DoGame(void)
 		pStageMgr->Run();
 	}
 
-	if( _pGameState->GetGameMode() != CGameState::GM_NONE)		// ¿øº».
+	if( _pGameState->GetGameMode() != CGameState::GM_NONE)		// ì›ë³¸.
 	{
 		_pGame->GameMainLoop();
 	// if game is not started
@@ -1060,12 +1060,12 @@ void DoGame(void)
 	{
 		int iState = _pGameState->GetGameMode();
 
-		if( _pGameState->GetGameMode() != CGameState::GM_NONE)		// ¿øº».
+		if( _pGameState->GetGameMode() != CGameState::GM_NONE)		// ì›ë³¸.
 		{
 			// handle pretouching of textures and shadowmaps
 			_pdpMain->Unlock();
 
-			// °á±¹Àº RenderView()¸¦ È£ÃâÇÔ.
+			// ê²°êµ­ì€ RenderView()ë¥¼ í˜¸ì¶œí•¨.
 			_pGame->GameRedrawView( _pdpMain, (_pGame->gm_csConsoleState!=CS_OFF)?0:GRV_SHOWEXTRAS);
 
 			_pdpMain->Lock();			
@@ -1079,7 +1079,7 @@ void DoGame(void)
 		_pGame->GameRedrawCursor( _pdpMain, (_pGame->gm_csConsoleState!=CS_OFF)?0:GRV_SHOWEXTRAS);
 
 		// render console
-		// ÄÜ¼ÖÃ¢ ·»´õ¸µ.
+		// ì½˜ì†”ì°½ ë Œë”ë§.
 		_pGame->ConsoleRender(_pdpMain);
 
 		// done with all
@@ -1132,7 +1132,7 @@ FLOAT RenderQuitScreen(CDrawPort *pdp, CViewPort *pvp)
 	return _fLastVolume;
 }
 
-// Á¾·á½Ã Credit º¸¿©ÁÖ´Â ºÎºĞ.
+// ì¢…ë£Œì‹œ Credit ë³´ì—¬ì£¼ëŠ” ë¶€ë¶„.
 void QuitScreenLoop(void)
 {
 //	Credits_On(3);
@@ -1140,7 +1140,7 @@ void QuitScreenLoop(void)
 	try 
 	{
 		_toStarField.SetData_t(CTFILENAME("Textures\\Background\\Night01\\Stars01.tex"));
-		//0603 kwon »èÁ¦.
+		//0603 kwon ì‚­ì œ.
 		//		soMusic.Play_t(CTFILENAME("Music\\Credits.mp3"), SOF_NONGAME|SOF_MUSIC|SOF_LOOP);
 	} 
 	catch (char *strError) 
@@ -1212,7 +1212,10 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 {
 	(void)hPrevInstance;
 
-#if		!defined(KALYDO) && !defined(G_CHINA) && !defined(VER_TEST)
+// The 2015 launcher requires an IPC handshake even when X-Trap is disabled.
+// For the private, explicitly marked standalone test client, skip only that
+// launcher IPC handshake. Normal regional builds retain the original path.
+#if !defined(LC_STANDALONE_CLIENT_TEST) && !defined(KALYDO) && !defined(G_CHINA) && !defined(VER_TEST)
 	CTString strparam = CTString(lpCmdLine);
 	IPCEventInfo EventInfo;
 	memset(EventInfo.ulParameter2, 0, sizeof(EventInfo.ulParameter2));
@@ -1253,7 +1256,7 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 					return TRUE;
 				}
 #ifndef	MULTI_CLIENT
-				if (SE_GetEngineDllRefCnt() > 1  || IsRunning() )// ¸ÖÆ¼ Å¬¶óÀÌ¾ğÆ® ¸·±â. [2/4/2010 rumist]
+				if (SE_GetEngineDllRefCnt() > 1  || IsRunning() )// ë©€í‹° í´ë¼ì´ì–¸íŠ¸ ë§‰ê¸°. [2/4/2010 rumist]
 				{
 					SendEventInfo.EventID = -1;
 					SendEventInfo.DestProcessID = 0;
@@ -1292,43 +1295,43 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 
 #ifndef		KALYDO
 	{
-		// ÇöÀç ½ÇÇàµÈ ÇÁ·Î±×·¥ÀÇ °æ·Î¸¦ ÀúÀåÇÒ º¯¼öÀÌ´Ù.
+		// í˜„ì¬ ì‹¤í–‰ëœ í”„ë¡œê·¸ë¨ì˜ ê²½ë¡œë¥¼ ì €ì¥í•  ë³€ìˆ˜ì´ë‹¤.
 		char temp_path[MAX_PATH] = {0,};
 
-		// ÇöÀç ½ÇÇàµÈ ÇÁ·Î±×·¥ÀÇ °æ·Î¸¦ ¾ò´Â´Ù.
+		// í˜„ì¬ ì‹¤í–‰ëœ í”„ë¡œê·¸ë¨ì˜ ê²½ë¡œë¥¼ ì–»ëŠ”ë‹¤.
 		GetModuleFileName(NULL, temp_path, sizeof(temp_path));
 
 
-		// ¹öÀü Á¤º¸¸¦ ¾ò±â À§ÇØ »ç¿ëÇÒ ÇÚµé°ªÀ» ÀúÀåÇÏ´Â º¯¼öÀÌ´Ù.
+		// ë²„ì „ ì •ë³´ë¥¼ ì–»ê¸° ìœ„í•´ ì‚¬ìš©í•  í•¸ë“¤ê°’ì„ ì €ì¥í•˜ëŠ” ë³€ìˆ˜ì´ë‹¤.
 		DWORD h_version_handle;
-		// ¹öÀüÁ¤º¸´Â Ç×¸ñÀ» »ç¿ëÀÚ°¡ Ãß°¡/»èÁ¦ ÇÒ¼ö ÀÖ±â ¶§¹®¿¡ °íÁ¤µÈ Å©±â°¡ ¾Æ´Ï´Ù.
-		// µû¶ó¼­ ÇöÀç ÇÁ·Î±×·¥ÀÇ ¹öÀüÁ¤º¸¿¡ ´ëÇÑ Å©±â¸¦ ¾ò¾î¼­ ±× Å©±â¿¡ ¸Â´Â ¸Ş¸ğ¸®¸¦ ÇÒ´çÇÏ°í ÀÛ¾÷ÇØ¾ßÇÑ´Ù.
+		// ë²„ì „ì •ë³´ëŠ” í•­ëª©ì„ ì‚¬ìš©ìê°€ ì¶”ê°€/ì‚­ì œ í• ìˆ˜ ìˆê¸° ë•Œë¬¸ì— ê³ ì •ëœ í¬ê¸°ê°€ ì•„ë‹ˆë‹¤.
+		// ë”°ë¼ì„œ í˜„ì¬ í”„ë¡œê·¸ë¨ì˜ ë²„ì „ì •ë³´ì— ëŒ€í•œ í¬ê¸°ë¥¼ ì–»ì–´ì„œ ê·¸ í¬ê¸°ì— ë§ëŠ” ë©”ëª¨ë¦¬ë¥¼ í• ë‹¹í•˜ê³  ì‘ì—…í•´ì•¼í•œë‹¤.
 		DWORD version_info_size = GetFileVersionInfoSize(temp_path, &h_version_handle);
 
-		// ¹öÀüÁ¤º¸¸¦ ÀúÀåÇÏ±â À§ÇÑ ½Ã½ºÅÛ ¸Ş¸ğ¸®¸¦ »ı¼ºÇÑ´Ù. ( ÇÚµé Çü½ÄÀ¸·Î »ı¼º )
+		// ë²„ì „ì •ë³´ë¥¼ ì €ì¥í•˜ê¸° ìœ„í•œ ì‹œìŠ¤í…œ ë©”ëª¨ë¦¬ë¥¼ ìƒì„±í•œë‹¤. ( í•¸ë“¤ í˜•ì‹ìœ¼ë¡œ ìƒì„± )
 		HANDLE h_memory = GlobalAlloc(GMEM_MOVEABLE, version_info_size); 
-		// ÇÚµé Çü½ÄÀÇ ¸Ş¸ğ¸®¸¦ »ç¿ëÇÏ±â À§ÇØ¼­ ÇØ´ç ÇÚµé¿¡ Á¢±ÙÇÒ¼ö ÀÖ´Â ÁÖ¼Ò¸¦ ¾ò´Â´Ù.
+		// í•¸ë“¤ í˜•ì‹ì˜ ë©”ëª¨ë¦¬ë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ì„œ í•´ë‹¹ í•¸ë“¤ì— ì ‘ê·¼í• ìˆ˜ ìˆëŠ” ì£¼ì†Œë¥¼ ì–»ëŠ”ë‹¤.
 		LPVOID p_info_memory = GlobalLock(h_memory);
 
-		// ÇöÀç ÇÁ·Î±×·¥ÀÇ ¹öÀü Á¤º¸¸¦ °¡Á®¿Â´Ù.
+		// í˜„ì¬ í”„ë¡œê·¸ë¨ì˜ ë²„ì „ ì •ë³´ë¥¼ ê°€ì ¸ì˜¨ë‹¤.
 		GetFileVersionInfo(temp_path, h_version_handle, version_info_size, p_info_memory);
 
 
-		// ¹öÀü Á¤º¸¿¡ Æ÷ÇÔµÈ °¢ Ç×¸ñº° Á¤º¸ À§Ä¡¸¦ ÀúÀåÇÒ º¯¼öÀÌ´Ù. ÀÌ Æ÷ÀÎÅÍ¿¡ Àü´ŞµÈ ÁÖ¼Ò´Â
-		// p_info_memory ÀÇ ³»ºÎ À§Ä¡ÀÌ±â ¶§¹®¿¡ ÇØÁ¦ÇÏ¸é ¾ÈµË´Ï´Ù.
-		// ( p_info_memory ¸¦ ÂüÁ¶ÇÏ´Â Çü½ÄÀÇ Æ÷ÀÎÅÍ ÀÔ´Ï´Ù. )
+		// ë²„ì „ ì •ë³´ì— í¬í•¨ëœ ê° í•­ëª©ë³„ ì •ë³´ ìœ„ì¹˜ë¥¼ ì €ì¥í•  ë³€ìˆ˜ì´ë‹¤. ì´ í¬ì¸í„°ì— ì „ë‹¬ëœ ì£¼ì†ŒëŠ”
+		// p_info_memory ì˜ ë‚´ë¶€ ìœ„ì¹˜ì´ê¸° ë•Œë¬¸ì— í•´ì œí•˜ë©´ ì•ˆë©ë‹ˆë‹¤.
+		// ( p_info_memory ë¥¼ ì°¸ì¡°í•˜ëŠ” í˜•ì‹ì˜ í¬ì¸í„° ì…ë‹ˆë‹¤. )
 		char *p_data = NULL;
-		// ½ÇÁ¦·Î ÀĞÀº Á¤º¸ÀÇ Å©±â¸¦ ÀúÀåÇÒ º¯¼öÀÌ´Ù.
+		// ì‹¤ì œë¡œ ì½ì€ ì •ë³´ì˜ í¬ê¸°ë¥¼ ì €ì¥í•  ë³€ìˆ˜ì´ë‹¤.
 		UINT data_size = 0;
 
-		// ¹öÀüÁ¤º¸¿¡ Æ÷ÇÔµÈ FileVersion Á¤º¸¸¦ ¾ò¾î¼­ Ãâ·ÂÇÑ´Ù.
+		// ë²„ì „ì •ë³´ì— í¬í•¨ëœ FileVersion ì •ë³´ë¥¼ ì–»ì–´ì„œ ì¶œë ¥í•œë‹¤.
 		if(VerQueryValue(p_info_memory, "\\StringFileInfo\\000004b0\\FileVersion", (void **)&p_data, &data_size)){ 
 			LOG_DEBUG("Version %s", p_data);
 			SE_Get_UIManagerPtr()->GetLogin()->setVersion(p_data);
 		}
 
 
-		// ¹öÀü Á¤º¸¸¦ ÀúÀåÇÏ±â À§ÇØ »ç¿ëÇß´ø ¸Ş¸ğ¸®¸¦ ÇØÁ¦ÇÑ´Ù.
+		// ë²„ì „ ì •ë³´ë¥¼ ì €ì¥í•˜ê¸° ìœ„í•´ ì‚¬ìš©í–ˆë˜ ë©”ëª¨ë¦¬ë¥¼ í•´ì œí•œë‹¤.
 		GlobalUnlock(h_memory); 
 		GlobalFree(h_memory);
 	}
@@ -1368,21 +1371,21 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	
 	ShowCursor(TRUE);
 	
-	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 15) : IME »óÅÂ Ã¢ Á¦°Å 
+	// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11. 15) : IME ìƒíƒœ ì°½ ì œê±° 
 	SendMessage ( _hwndMain, WM_IME_NOTIFY, IMN_CLOSESTATUSWINDOW, NULL );
-	// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ 
+	// ì´ê¸°í™˜ ìˆ˜ì • ë 
 
 
-//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
 	FLOAT tmPrev = 0;
 	FLOAT tmNow = 0;
 	INDEX cntFrame = 0;
 	FLOAT tmLastSndMute = 0;
-//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
 
 	// WSS_NPROTECT 070402 ------------------------------->>
-	// À©µµ¿ì ÇÚµé »ı¼º ÀÌÈÄ ¸ğµç ±×·¡ÇÈ UI°ü·Ã ÃÊ±âÈ­°¡ ³¡³­ ÈÄ SetHwnd() È£Ãâ
-	// ÀÌ ÇÔ¼ö·Î ºÎÅÍ CallBack ÇÔ¼ö°¡ È£Ãâ µÇ±â ½ÃÀÛÇÔ...
+	// ìœˆë„ìš° í•¸ë“¤ ìƒì„± ì´í›„ ëª¨ë“  ê·¸ë˜í”½ UIê´€ë ¨ ì´ˆê¸°í™”ê°€ ëë‚œ í›„ SetHwnd() í˜¸ì¶œ
+	// ì´ í•¨ìˆ˜ë¡œ ë¶€í„° CallBack í•¨ìˆ˜ê°€ í˜¸ì¶œ ë˜ê¸° ì‹œì‘í•¨...
 #ifndef NO_GAMEGUARD
 //	CPrintF("[ ---->> GameGuard SetHwnd...Start <<---- ] - %lu\n",timeGetTime());
 	//_pNetwork->SetHwnd_nProtect(_hwndMain);
@@ -1466,9 +1469,9 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 				||  msg.message==WM_KILLFOCUS
 				|| (msg.message==WM_ACTIVATEAPP && !msg.wParam)) 
 			{
-				// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 15) : IME »óÅÂ Ã¢ Á¦°Å 
+				// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11. 15) : IME ìƒíƒœ ì°½ ì œê±° 
 				SendMessage ( _hwndMain, WM_IME_NOTIFY, IMN_CLOSESTATUSWINDOW, NULL );
-				// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ 
+				// ì´ê¸°í™˜ ìˆ˜ì • ë 
 			}
 			// if application is activated or minimized
 			else if( (msg.message==WM_ACTIVATE && (LOWORD(msg.wParam)==WA_ACTIVE || LOWORD(msg.wParam)==WA_CLICKACTIVE))
@@ -1477,21 +1480,21 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 			{
 				if (msg.message == WM_SETFOCUS)
 					msg = msg;
-				// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 15) : IME »óÅÂ Ã¢ Á¦°Å 
+				// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11. 15) : IME ìƒíƒœ ì°½ ì œê±° 
 				SendMessage ( _hwndMain, WM_IME_NOTIFY, IMN_CLOSESTATUSWINDOW, NULL );
-				// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ 
+				// ì´ê¸°í™˜ ìˆ˜ì • ë 
 			}
 			// UI message
-			SE_Get_UIManagerPtr()->MsgProc( &msg, &_bIMEProc );	// yjpark // ÀÌ±âÈ¯ ¼öÁ¤ 11.12 : IME Ã³¸® Ãß°¡
+			SE_Get_UIManagerPtr()->MsgProc( &msg, &_bIMEProc );	// yjpark // ì´ê¸°í™˜ ìˆ˜ì • 11.12 : IME ì²˜ë¦¬ ì¶”ê°€
 			
 			BOOL bMenuForced = 
-				//(_gmRunningGameMode==GM_NONE &&		// ¿øº».
+				//(_gmRunningGameMode==GM_NONE &&		// ì›ë³¸.
 				(_pGameState->GetGameMode() == CGameState::GM_NONE &&
 				(_pGame->gm_csConsoleState==CS_OFF || 
 				_pGame->gm_csConsoleState==CS_TURNINGOFF));
 			
 			// interpret console key presses
-			// ÄÜ¼ÖÃ¢¿¡ Å°ÀÔ·Â¹Ş´Â ºÎºĞ.
+			// ì½˜ì†”ì°½ì— í‚¤ì…ë ¥ë°›ëŠ” ë¶€ë¶„.
 
 #if		defined(VER_TEST)
 			if (_iAddonExecState==0) 
@@ -1507,7 +1510,7 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 			}
 			
 			// if toggling console
-			// ÄÜ¼Ö Å°¸¦ ´­·¶À»¶§~!!!
+			// ì½˜ì†” í‚¤ë¥¼ ëˆŒë €ì„ë•Œ~!!!
 			BOOL bConsoleKey = sam_bToggleConsole || msg.message==WM_KEYDOWN && _pNetwork->m_ubGMLevel > 0 &&
 				( MapVirtualKey( msg.wParam, 0 ) == 41 /* scan code for '~' */ );
 			if(bConsoleKey && !_bDefiningKey)
@@ -1523,8 +1526,8 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 					IFeel_StopEffect(NULL);
 				}
 				
-				// ÄÜ¼ÖÃ¢À» ´İÀ¸·ÁÇÒ¶§...
-				// Áï, ÄÜ¼ÖÃ¢ÀÌ ¿­¸°»óÅÂ¿¡¼­....
+				// ì½˜ì†”ì°½ì„ ë‹«ìœ¼ë ¤í• ë•Œ...
+				// ì¦‰, ì½˜ì†”ì°½ì´ ì—´ë¦°ìƒíƒœì—ì„œ....
 				else if( _pGame->gm_csConsoleState==CS_ON || _pGame->gm_csConsoleState==CS_TURNINGON) 
 				{
 					// start it moving up
@@ -1563,7 +1566,7 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 		// do the main game loop and render screen
 		DoGame();
 		
-//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
 		extern ENGINE_API FLOAT g_fFramePerSecond;
 		extern ENGINE_API BOOL g_bNoPlaySnd;
 		++cntFrame;
@@ -1571,7 +1574,7 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 		static bool bForDebug = FALSE;
 		if(!bForDebug)
 		{
-			if(g_fFramePerSecond == FLT_MAX || (tmNow - tmPrev) >= 1.0f)	//1ÃÊ¿¡ ÇÑ¹ø Ã³¸®.
+			if(g_fFramePerSecond == FLT_MAX || (tmNow - tmPrev) >= 1.0f)	//1ì´ˆì— í•œë²ˆ ì²˜ë¦¬.
 			{
 				g_fFramePerSecond = FLOAT( cntFrame / (tmNow - tmPrev) );
 				if(g_fFramePerSecond < 6.1f)
@@ -1595,7 +1598,7 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 				// ---------------------------------------------------<<
 			}
 		}
-//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
+//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
 	} // end of main application loop
 	
 	//_pInput->DisableInput();
@@ -1730,15 +1733,15 @@ int PASCAL WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	// 2012-07-19 sykim70
 	if (UpdateNewLauncher())
 	{
-		if( GetSystemDefaultLangID() == 0x0804 ) // Áß±¹ ·ÎÄÃÀÇ °æ¿ì ¼öÁ¤
+		if( GetSystemDefaultLangID() == 0x0804 ) // ì¤‘êµ­ ë¡œì»¬ì˜ ê²½ìš° ìˆ˜ì •
 		{
-			MessageBox(NULL, "Çëµã»÷È·¶¨£¬ÖØĞÂÆô¶¯Áú»ê¡£", "Áú»ê", MB_OK); 
+			MessageBox(NULL, "í—ë“ìƒŒíš…ë•ï¼Œè·¯åŠ¤í˜ë•¡ì§ˆì‚°ã€‚", "ì§ˆì‚°", MB_OK); 
 		}
 		else 
 		{
-			// ITS #0005892 : russia ¿äÃ»»çÇ×. [1/13/2012 rumist]
+			// ITS #0005892 : russia ìš”ì²­ì‚¬í•­. [1/13/2012 rumist]
 #if defined (G_RUSSIA)
-			MessageBoxW(NULL, L"¬±¬Ö¬â¬Ö¬Ù¬Ñ¬á¬å¬ã¬ä¬Ú¬ä¬Ö ¬Ú¬Ô¬â¬å.", L"¬°¬Ò¬ß¬à¬Ó¬İ¬Ö¬ß¬Ú¬Ö ¬Ù¬Ñ¬Ó¬Ö¬â¬ê¬Ö¬ß¬à", MB_OK);
+			MessageBoxW(NULL, L"ĞŸĞµÑ€ĞµĞ·Ğ°Ğ¿ÑƒÑÑ‚Ğ¸Ñ‚Ğµ Ğ¸Ğ³Ñ€Ñƒ.", L"ĞĞ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ğµ Ğ·Ğ°Ğ²ĞµÑ€ÑˆĞµĞ½Ğ¾", MB_OK);
 #else
 			MessageBox(NULL, "Update is completed.\nPlease, restart game.", "Update completed", MB_OK);
 #endif
@@ -1820,11 +1823,11 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 
 	// try to set new display mode
 	BOOL bSuccess;
-	//	±è¿µÈ¯ : ÇÔ¼ö ÆÄ¶ó¹ÌÅÍ º¯°æ.
+	//	ê¹€ì˜í™˜ : í•¨ìˆ˜ íŒŒë¼ë¯¸í„° ë³€ê²½.
 	if( eGfxAPI==GAT_D3D) OpenMainWindowNormal( pixSizeI, pixSizeJ,bCenter);
 	bSuccess = _pGfx->ResetDisplayMode( eGfxAPI);
 	if( bSuccess && eGfxAPI==GAT_OGL) OpenMainWindowNormal( pixSizeI, pixSizeJ);
-	//	±è¿µÈ¯ : ¹«½Ã OpenMainWindowNormal() Ã³¸®µÊ.
+	//	ê¹€ì˜í™˜ : ë¬´ì‹œ OpenMainWindowNormal() ì²˜ë¦¬ë¨.
 
 	// if new mode was set
 	if( bSuccess) {
@@ -1834,7 +1837,7 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 		if(_pdpNormalMain) delete _pdpNormalMain;
  	  _pGfx->CreateWindowCanvas( _hwndMain, &_pvpViewPortMain, &_pdpNormalMain);
 
-	    // À©µµ¿ì Æ÷Ä¿½º Á¶Á¤
+	    // ìœˆë„ìš° í¬ì»¤ìŠ¤ ì¡°ì •
 	    SetFocus(_hwndMain);
 
 		// erase context of both buffers (for the sake of wide-screen)
@@ -1858,8 +1861,8 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 		BOOL bSuccess = FALSE;
 		if( _pdpMain!=NULL && _pdpMain->Lock()) 
 		{
-			//pdp->Fill( LCDGetColor( C_dGREEN|CT_OPAQUE, "bcg fill"));		// ¿øº».
-			_pdpMain->Fill( C_BLACK|CT_OPAQUE);				// maybe µ¿¹Î
+			//pdp->Fill( LCDGetColor( C_dGREEN|CT_OPAQUE, "bcg fill"));		// ì›ë³¸.
+			_pdpMain->Fill( C_BLACK|CT_OPAQUE);				// maybe ë™ë¯¼
 			_pdpMain->Unlock();
 			_pvpViewPortMain->SwapBuffers();
 			bSuccess = TRUE;
@@ -2003,7 +2006,7 @@ void StartNewMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI, PIX pi
 	_tmDisplayModeChanged = _pTimer->GetRealTimeTick();
 }
 
-//	±è¿µÈ¯ : À©µµ¿ì Å©±â º¯°æ
+//	ê¹€ì˜í™˜ : ìœˆë„ìš° í¬ê¸° ë³€ê²½
 bool	Set_Window_Size()
 {
 	if(sam_bFullScreenActive != 1)
