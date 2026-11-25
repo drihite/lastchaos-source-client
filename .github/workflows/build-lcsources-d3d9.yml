@@ -123,8 +123,12 @@ jobs:
           Expand-Archive -Path $zip -DestinationPath $root -Force
           $lib = Join-Path $root 'build/native/release/lib/x86'
           if (-not (Test-Path (Join-Path $lib 'd3dx9.lib'))) { throw "Missing Win32 d3dx9.lib in $lib" }
+          $sdkLib = 'd3d9/VSProjects/LC2015/Client/Tools.Win32/Libraries/DX9SDK/lib/x86'
+          New-Item -ItemType Directory -Path $sdkLib -Force | Out-Null
+          Copy-Item (Join-Path $lib '*.lib') -Destination $sdkLib -Force
+          if (-not (Test-Path (Join-Path $sdkLib 'd3dx9.lib'))) { throw 'D3DX9 SDK library not staged' }
           "LIB=$lib;$env:LIB" >> $env:GITHUB_ENV
-          Write-Host "Provided legacy DirectX 9 library: $lib"
+          Write-Host "Staged DirectX 9 Win32 libraries in solution LibraryPath: $sdkLib"
       - name: Compile LCRelease Win32 client (experimental)
         id: compile
         shell: pwsh
