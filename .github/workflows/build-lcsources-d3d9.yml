@@ -129,6 +129,16 @@ jobs:
           if (-not (Test-Path (Join-Path $sdkLib 'd3dx9.lib'))) { throw 'D3DX9 SDK library not staged' }
           "LIB=$lib;$env:LIB" >> $env:GITHUB_ENV
           Write-Host "Staged DirectX 9 Win32 libraries in solution LibraryPath: $sdkLib"
+      - name: Resolve legacy Quest comparator ambiguity
+        shell: pwsh
+        run: |
+          $path = 'd3d9/VSProjects/LC2015/Client/Sources.VS2019.DX9/Engine/Contents/Base/Quest.h'
+          $source = [System.IO.File]::ReadAllText($path)
+          $old = 'class Compare : unary_function<Quest::stRestoreInfo, bool>'
+          $new = 'class Compare'
+          if (-not $source.Contains($old)) { throw 'Expected legacy Quest comparator not found' }
+          $source = $source.Replace($old, $new)
+          [System.IO.File]::WriteAllText($path, $source)
       - name: Compile LCRelease Win32 client (experimental)
         id: compile
         shell: pwsh
